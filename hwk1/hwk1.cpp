@@ -20,6 +20,7 @@
  * problem reports or change requests be submitted to it directly
  *****************************************************************************/
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
@@ -28,10 +29,14 @@
 
 #include "CL\cl.h"
 #include "utils.h"
+#include "profiler.h"
+#include "tools.h"
+#include "arithmetic.h"
 
 //for perf. counters
 #include <Windows.h>
 
+using namespace std;
 
 // Macros for OpenCL versions
 #define OPENCL_VERSION_1_2  1.2f
@@ -138,11 +143,6 @@ struct ocl_args_d_t
     float            platformVersion;   // hold the OpenCL platform version (default 1.2)
     float            deviceVersion;     // hold the OpenCL device version (default. 1.2)
     float            compilerVersion;   // hold the device OpenCL C version (default. 1.2)
-    
-    // Objects that are specific for algorithm implemented in this sample
-    cl_mem           srcA;              // hold first source buffer
-    cl_mem           srcB;              // hold second source buffer
-    cl_mem           dstMem;            // hold destination buffer
 };
 
 ocl_args_d_t::ocl_args_d_t():
@@ -153,10 +153,7 @@ ocl_args_d_t::ocl_args_d_t():
         kernel(NULL),
         platformVersion(OPENCL_VERSION_1_2),
         deviceVersion(OPENCL_VERSION_1_2),
-        compilerVersion(OPENCL_VERSION_1_2),
-        srcA(NULL),
-        srcB(NULL),
-        dstMem(NULL)
+        compilerVersion(OPENCL_VERSION_1_2)
 {
 }
 
@@ -189,30 +186,6 @@ ocl_args_d_t::~ocl_args_d_t()
         if (CL_SUCCESS != err)
         {
             LogError("Error: clReleaseProgram returned '%s'.\n", TranslateOpenCLError(err));
-        }
-    }
-    if (srcA)
-    {
-        err = clReleaseMemObject(srcA);
-        if (CL_SUCCESS != err)
-        {
-            LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
-        }
-    }
-    if (srcB)
-    {
-        err = clReleaseMemObject(srcB);
-        if (CL_SUCCESS != err)
-        {
-            LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
-        }
-    }
-    if (dstMem)
-    {
-        err = clReleaseMemObject(dstMem);
-        if (CL_SUCCESS != err)
-        {
-            LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
         }
     }
     if (commandQueue)
@@ -455,21 +428,6 @@ int GetPlatformAndDeviceVersion (cl_platform_id platformId, ocl_args_d_t *ocl)
 }
 
 
-/*
- * Generate random value for input buffers
- */
-void generateInput(cl_int* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
-{
-    srand(12345);
-
-    // random initialization of input
-    cl_uint array_size = arrayWidth * arrayHeight;
-    for (cl_uint i = 0; i < array_size; ++i)
-    {
-        inputArray[i] = rand();
-    }
-}
-
 
 /*
  * This function picks/creates necessary OpenCL objects which are needed.
@@ -483,6 +441,8 @@ void generateInput(cl_int* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
  * so this function populates fields of this structure, which is passed as parameter ocl.
  * Please, consider reviewing the fields before going further.
  * The structure definition is right in the beginning of this file.
+ *
+ * Dependencies: None
  */
 int SetupOpenCL(ocl_args_d_t *ocl, cl_device_type deviceType)
 {
@@ -553,8 +513,10 @@ int SetupOpenCL(ocl_args_d_t *ocl, cl_device_type deviceType)
 
 /* 
  * Create and build OpenCL program from its source code
+ *
+ * Dependencies: Imports .cl file by name
  */
-int CreateAndBuildProgram(ocl_args_d_t *ocl)
+int CreateAndBuildProgram(ocl_args_d_t *ocl, const std::string& filename)
 {
     cl_int err = CL_SUCCESS;
 
@@ -562,7 +524,7 @@ int CreateAndBuildProgram(ocl_args_d_t *ocl)
     // The size of the C program is returned in sourceSize
     char* source = NULL;
     size_t src_size = 0;
-    err = ReadSourceFromFile("Template.cl", &source, &src_size);
+    err = ReadSourceFromFile(filename.c_str(), &source, &src_size);
     if (CL_SUCCESS != err)
     {
         LogError("Error: ReadSourceFromFile returned %s.\n", TranslateOpenCLError(err));
@@ -614,95 +576,62 @@ Finish:
 }
 
 
-/*
- * Create OpenCL buffers from host memory
- * These buffers will be used later by the OpenCL kernel
- */
-int CreateBufferArguments(ocl_args_d_t *ocl, cl_int* inputA, cl_int* inputB, cl_int* outputC, cl_uint arrayWidth, cl_uint arrayHeight)
+int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input)
 {
-    cl_int err = CL_SUCCESS;
+	cl_int err = CL_SUCCESS;
 
-    // Create new OpenCL buffer objects
-    // As these buffer are used only for read by the kernel, you are recommended to create it with flag CL_MEM_READ_ONLY.
-    // Always set minimal read/write flags for buffers, it may lead to better performance because it allows runtime
-    // to better organize data copying.
-    // You use CL_MEM_COPY_HOST_PTR here, because the buffers should be populated with bytes at inputA and inputB.
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float), input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
 
-    ocl->srcA = clCreateBuffer(ocl->context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_uint) * arrayWidth * arrayHeight, inputA, &err);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clCreateBuffer for srcA returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
+int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
 
-    ocl->srcB = clCreateBuffer(ocl->context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_uint) * arrayWidth * arrayHeight, inputB, &err);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clCreateBuffer for srcB returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float)*arrayWidth*arrayHeight, input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
 
-    // If the output buffer is created directly on top of output buffer using CL_MEM_USE_HOST_PTR,
-    // then, depending on the OpenCL runtime implementation and hardware capabilities, 
-    // it may save you not necessary data copying.
-    // As it is known that output buffer will be write only, you explicitly declare it using CL_MEM_WRITE_ONLY.
-    ocl->dstMem = clCreateBuffer(ocl->context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_uint) * arrayWidth * arrayHeight, outputC, &err);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clCreateBuffer for dstMem returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
-
-
-    return CL_SUCCESS;
+int CreateWriteBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* output, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float) * arrayWidth * arrayHeight, output, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Write returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
 }
 
 
-/*
- * Set kernel arguments
- */
-cl_uint SetKernelArguments(ocl_args_d_t *ocl)
+cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum)
 {
-    cl_int err = CL_SUCCESS;
-
-    err  =  clSetKernelArg(ocl->kernel, 0, sizeof(cl_mem), (void *)&ocl->srcA);
-    if (CL_SUCCESS != err)
-    {
-        LogError("error: Failed to set argument srcA, returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
-
-    err  = clSetKernelArg(ocl->kernel, 1, sizeof(cl_mem), (void *)&ocl->srcB);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: Failed to set argument srcB, returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
-
-    err  = clSetKernelArg(ocl->kernel, 2, sizeof(cl_mem), (void *)&ocl->dstMem);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: Failed to set argument dstMem, returned %s\n", TranslateOpenCLError(err));
-        return err;
-    }
-
-    return err;
+	cl_int err = clSetKernelArg(*kernel, argNum, sizeof(cl_mem), (void *)mem);
+	if (CL_SUCCESS != err)
+		LogError("error: Failed to set argument %d, returned %s\n", argNum, TranslateOpenCLError(err));
+	return err;
 }
-
 
 /*
  * Execute the kernel
  */
-cl_uint ExecuteAddKernel(ocl_args_d_t *ocl, cl_uint width, cl_uint height)
+cl_uint ExecuteKernel(ocl_args_d_t *ocl, size_t *globalWorkSize, size_t workSizeCount)
 {
     cl_int err = CL_SUCCESS;
 
-    // Define global iteration space for clEnqueueNDRangeKernel.
-    size_t globalWorkSize[2] = {width, height};
-
-
-    // execute kernel
-    err = clEnqueueNDRangeKernel(ocl->commandQueue, ocl->kernel, 2, NULL, globalWorkSize, NULL, 0, NULL, NULL);
+	// execute kernel
+    err = clEnqueueNDRangeKernel(ocl->commandQueue, ocl->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, NULL);
     if (CL_SUCCESS != err)
     {
         LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
@@ -720,18 +649,17 @@ cl_uint ExecuteAddKernel(ocl_args_d_t *ocl, cl_uint width, cl_uint height)
     return CL_SUCCESS;
 }
 
-
 /*
  * "Read" the result buffer (mapping the buffer to the host memory address)
  */
-bool ReadAndVerify(ocl_args_d_t *ocl, cl_uint width, cl_uint height, cl_int *inputA, cl_int *inputB)
+bool ReadAndVerifyAdd(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_uint height, cl_float *inputA, cl_float *inputB)
 {
     cl_int err = CL_SUCCESS;
     bool result = true;
 
     // Enqueue a command to map the buffer object (ocl->dstMem) into the host address space and returns a pointer to it
     // The map operation is blocking
-    cl_int *resultPtr = (cl_int *)clEnqueueMapBuffer(ocl->commandQueue, ocl->dstMem, true, CL_MAP_READ, 0, sizeof(cl_uint) * width * height, 0, NULL, NULL, &err);
+    cl_float *resultPtr = (cl_float *)clEnqueueMapBuffer(*commandQueue, *outputC, true, CL_MAP_READ, 0, sizeof(cl_uint) * width * height, 0, NULL, NULL, &err);
 
     if (CL_SUCCESS != err)
     {
@@ -740,7 +668,7 @@ bool ReadAndVerify(ocl_args_d_t *ocl, cl_uint width, cl_uint height, cl_int *inp
     }
 
     // Call clFinish to guarantee that output region is updated
-    err = clFinish(ocl->commandQueue);
+    err = clFinish(*commandQueue);
     if (CL_SUCCESS != err)
     {
         LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
@@ -753,13 +681,13 @@ bool ReadAndVerify(ocl_args_d_t *ocl, cl_uint width, cl_uint height, cl_int *inp
     {
         if (resultPtr[k] != inputA[k] + inputB[k])
         {
-            LogError("Verification failed at %d: (%d + %d = %d)\n", k, inputA[k], inputB[k], resultPtr[k]);
+            LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
             result = false;
         }
     }
 
      // Unmapped the output buffer before releasing it
-    err = clEnqueueUnmapMemObject(ocl->commandQueue, ocl->dstMem, resultPtr, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(*commandQueue, *outputC, resultPtr, 0, NULL, NULL);
     if (CL_SUCCESS != err)
     {
         LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
@@ -768,6 +696,505 @@ bool ReadAndVerify(ocl_args_d_t *ocl, cl_uint width, cl_uint height, cl_int *inp
     return result;
 }
 
+bool ReadAndVerifySAXPY_1D(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_float inputA, cl_float *inputX, cl_float *inputY)
+{
+	cl_int err = CL_SUCCESS;
+	bool result = true;
+
+	// Enqueue a command to map the buffer object (ocl->dstMem) into the host address space and returns a pointer to it
+	// The map operation is blocking
+	cl_float *resultPtr = (cl_float *)clEnqueueMapBuffer(*commandQueue, *outputC, true, CL_MAP_READ, 0, sizeof(cl_uint) * width, 0, NULL, NULL, &err);
+
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clEnqueueMapBuffer returned %s\n", TranslateOpenCLError(err));
+		return false;
+	}
+
+	// Call clFinish to guarantee that output region is updated
+	err = clFinish(*commandQueue);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
+	}
+
+	// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+	// Verify the results
+	unsigned int size = width;
+	for (unsigned int k = 0; k < size; ++k)
+	{
+		if (resultPtr[k] != inputA*inputX[k] + inputY[k])
+		{
+			LogError("Verification failed at %d: (%f * %f + %f = %f)\n", k, inputA, inputX[k], inputY[k], resultPtr[k]);
+			result = false;
+		}
+	}
+
+	// Unmapped the output buffer before releasing it
+	err = clEnqueueUnmapMemObject(*commandQueue, *outputC, resultPtr, 0, NULL, NULL);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
+	}
+
+	return result;
+}
+
+
+/////////// OpenCL ADD /////////// 
+int exCL_add(ProfilerStruct* profiler)
+{
+	cl_int err;
+	ocl_args_d_t ocl;
+	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
+	cl_mem           srcA;              // hold first source buffer
+	cl_mem           srcB;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
+
+	cl_uint arrayWidth = 1024;
+	cl_uint arrayHeight = 1024;
+
+	//initialize Open CL objects (context, queue, etc.)
+	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
+		return -1;
+
+	// allocate working buffers. 
+	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint optimizedSize = ((sizeof(cl_float) * arrayWidth * arrayHeight - 1) / 64 + 1) * 64;
+	cl_float* inputA = (cl_float*)_aligned_malloc(optimizedSize, 4096);
+	cl_float* inputB = (cl_float*)_aligned_malloc(optimizedSize, 4096);
+	cl_float* outputC = (cl_float*)_aligned_malloc(optimizedSize, 4096);
+	if (NULL == inputA || NULL == inputB || NULL == outputC)
+	{
+		LogError("Error: _aligned_malloc failed to allocate buffers.\n");
+		return -1;
+	}
+
+	//random input
+	tools::generateInputCL(inputA, arrayWidth, arrayHeight);
+	tools::generateInputCL(inputB, arrayWidth, arrayHeight);
+
+	// Create OpenCL buffers from host memory
+	// These buffers will be used later by the OpenCL kernel
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcB, inputB, arrayWidth, arrayHeight))
+		return -1;
+	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputC, arrayWidth, arrayHeight))
+		return -1;
+
+	// Create and build the OpenCL program
+	// Imports the named cl file
+	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl")) 
+		return -1;
+
+	// Program consists of kernels.
+	// Each kernel can be called (enqueued) from the host part of OpenCL application.
+	// To call the kernel, you need to create it from existing program.
+	// Kernel named here ("Add" in this case) must exist in the previously loaded cl file
+	ocl.kernel = clCreateKernel(ocl.program, "Add", &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
+		return -1;
+	}
+
+	// Passing arguments into OpenCL kernel.	
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcB, 1))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 2))
+		return -1;
+
+	// FINALLY! RUN!
+	if (profiler)
+		profiler->Start();
+	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
+	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
+		return -1;
+	if (profiler)
+		profiler->Stop();
+	
+	// The last part of this function: getting processed results back.
+	// use map-unmap sequence to update original memory area with output buffer.
+	if (ReadAndVerifyAdd(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, inputA, inputB))
+		LogInfo("Verified OpenCL Add Worked.\n");
+
+	// retrieve performance counter frequency
+	if (profiler)
+		profiler->Log();
+
+	_aligned_free(inputA);
+	_aligned_free(inputB);
+	_aligned_free(outputC);
+
+	if (CL_SUCCESS != clReleaseMemObject(srcA))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcB))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(dstMem))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	
+	return 0;
+}
+
+/////////// SEQUENTIAL ADD via C++ STL /////////// 
+int exSequential_addSTL(ProfilerStruct* profiler)
+{
+	const size_t arrayWidth = 1024;
+	const size_t arrayHeight = 1024;
+	std::vector<std::vector<float> > matrixA;
+	std::vector<std::vector<float> > matrixB;
+	std::vector<std::vector<float> > matrixC;
+	tools::createEmptyMatrix(&matrixA, arrayWidth, arrayHeight);
+	tools::createEmptyMatrix(&matrixB, arrayWidth, arrayHeight);
+	tools::createEmptyMatrix(&matrixC, arrayWidth, arrayHeight);
+	tools::generateInputSTL(&matrixA);
+	tools::generateInputSTL(&matrixB);
+
+	if (profiler)
+		profiler->Start();
+
+	dmath::add(matrixA, matrixB, &matrixC);
+
+	if (profiler)
+		profiler->Stop();
+
+	if (profiler)
+		profiler->Log();
+
+	// verify 
+	for (size_t row = 0; row < arrayHeight; row++)
+	{
+		for (size_t col = 0; col < arrayWidth; col++)
+		{
+			if (matrixC[row][col] != matrixA[row][col] + matrixB[row][col])
+				LogError("Verification failed at (%d,%d): (%d + %d = %d)\n", row, col, matrixA[row][col], matrixB[row][col], matrixC[row][col]);
+		}
+	}
+
+
+	return 0;
+}
+
+/////////// SEQUENTIAL ADD via C /////////// 
+int exSequential_addC(ProfilerStruct* profiler)
+{
+	const size_t arrayWidth = 1024;
+	const size_t arrayHeight = 1024;
+	
+	// allocate memory
+	float* matrixA = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	float* matrixB = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	float* matrixC = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+
+	// generate data
+	tools::generateInputC(matrixA, arrayWidth, arrayHeight);
+	tools::generateInputC(matrixB, arrayWidth, arrayHeight);
+
+	// add
+	if (profiler)
+		profiler->Start();
+	dmath::add(matrixA, matrixB, matrixC, arrayWidth, arrayHeight);
+	if (profiler)
+		profiler->Stop();
+	if (profiler)
+		profiler->Log();
+
+	// free memory
+	free(matrixA);
+	free(matrixB);
+	free(matrixC);
+	return 0;
+}
+
+/////////// OpenCL SAXPY /////////// 
+int exCL_SAXPY_1D(ProfilerStruct* profiler)
+{
+	cl_int err;
+	ocl_args_d_t ocl;
+	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
+	cl_mem           scalarA;
+	cl_mem           srcX;              // hold first source buffer
+	cl_mem           srcY;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
+
+	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
+		return -1;
+
+	// allocate working buffers. 
+	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayWidth = 1024;
+	cl_float* inputA = (cl_float*)malloc(sizeof(cl_float));
+	cl_float* inputX = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth), 4096);
+	cl_float* inputY = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth), 4096);
+	cl_float* outputZ = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth), 4096);
+	if (NULL == inputA || NULL == inputX || NULL == inputY || NULL == outputZ)
+	{
+		LogError("Error: malloc failed to allocate buffers.\n");
+		return -1;
+	}
+
+	//random input
+	*inputA = (cl_float)(rand() % 1000);
+	tools::generateInputCL(inputX, arrayWidth, 1);
+	tools::generateInputCL(inputY, arrayWidth, 1);
+
+	// Create OpenCL buffers from host memory
+	// These buffers will be used later by the OpenCL kernel
+	if (CL_SUCCESS != CreateReadBufferArg_Float(&ocl.context, &scalarA, inputA))						// A
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayWidth, 1))		// X
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayWidth, 1))		// Y
+		return -1;
+	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayWidth, 1))	// output
+		return -1;
+
+	// Create and build the OpenCL program
+	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl"))
+		return -1;
+	ocl.kernel = clCreateKernel(ocl.program, "SAXPY_1D", &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
+		return -1;
+	}
+
+	// Passing arguments into OpenCL kernel.
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &scalarA, 0))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcX, 1))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcY, 2))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
+		return -1;
+
+	if (profiler) profiler->Start();
+	size_t globalWorkSize[1] = { arrayWidth };
+	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 1))
+		return -1;
+	if (profiler) profiler->Stop();
+	ReadAndVerifySAXPY_1D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
+	if (profiler) profiler->Log();
+
+	free(inputA);
+	_aligned_free(inputX);
+	_aligned_free(inputY);
+	_aligned_free(outputZ);
+
+	if (CL_SUCCESS != clReleaseMemObject(scalarA))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcX))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcY))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(dstMem))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+
+	return 0;
+}
+
+/////////// SEQUENTIAL SAXPY 1D via C++ STL /////////// 
+int exSequential_SAXPY_1D_STL(ProfilerStruct* profiler)
+{
+	const size_t width = 1024;
+	std::vector<float> matrixA(width);
+	std::vector<float> matrixB(width);
+	std::vector<float> matrixC(width);
+	
+	// generate random data
+	srand(12345);
+	float Aval = (float)(rand() % 1000);
+	for (size_t i = 0; i < width; i++)
+	{
+		matrixA[i] = (float)(rand() % 1000);
+		matrixB[i] = (float)(rand() % 1000);
+	}
+
+	// Run
+	if (profiler)
+		profiler->Start();
+	dmath::saxpy_1d(Aval, matrixA, matrixB, &matrixC);
+	if (profiler)
+	{
+		profiler->Stop();
+		profiler->Log();
+	}
+
+	return 0;
+}
+
+/////////// OpenCL SAXPY /////////// 
+int exCL_SAXPY_2D(ProfilerStruct* profiler)
+{
+	cl_int err;
+	ocl_args_d_t ocl;
+	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
+	cl_mem           srcA;				// hold scalar buffer
+	cl_mem           srcX;              // hold first source buffer
+	cl_mem           srcY;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
+
+	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
+		return -1;
+
+	// allocate working buffers. 
+	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayWidth = 1024;
+	cl_uint arrayHeight = 1024;
+	cl_float* inputA = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
+	cl_float* inputX = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
+	cl_float* inputY = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
+	cl_float* outputZ = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
+	if (NULL == inputA || NULL == inputX || NULL == inputY || NULL == outputZ)
+	{
+		LogError("Error: malloc failed to allocate buffers.\n");
+		return -1;
+	}
+
+	//random input
+	tools::generateInputCL(inputA, arrayWidth, arrayHeight);
+	tools::generateInputCL(inputX, arrayWidth, arrayHeight);
+	tools::generateInputCL(inputY, arrayWidth, arrayHeight);
+
+	// Create OpenCL buffers from host memory
+	// These buffers will be used later by the OpenCL kernel
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))		// A
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayWidth, arrayHeight))		// X
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayWidth, arrayHeight))		// Y
+		return -1;
+	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayWidth, arrayHeight))	// output
+		return -1;
+
+	// Create and build the OpenCL program
+	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl"))
+		return -1;
+	ocl.kernel = clCreateKernel(ocl.program, "SAXPY_2D", &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
+		return -1;
+	}
+
+	// Passing arguments into OpenCL kernel.
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcX, 1))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcY, 2))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
+		return -1;
+
+	if (profiler) profiler->Start();
+	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
+	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
+		return -1;
+	if (profiler) profiler->Stop();
+	//ReadAndVerifySAXPY_2D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
+	if (profiler) profiler->Log();
+
+	_aligned_free(inputA);
+	_aligned_free(inputX);
+	_aligned_free(inputY);
+	_aligned_free(outputZ);
+
+	if (CL_SUCCESS != clReleaseMemObject(srcA))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcX))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcY))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(dstMem))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+
+	return 0;
+}
+
+/////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
+int exSequential_SAXPY_2D_STL(ProfilerStruct* profiler)
+{
+	const size_t arrayWidth = 1024;
+	const size_t arrayHeight = 1024;
+	std::vector<std::vector<float> > matrixA;
+	std::vector<std::vector<float> > matrixB;
+	std::vector<std::vector<float> > matrixC;
+	std::vector<std::vector<float> > matrixD;
+	
+	// allocate space
+	tools::createEmptyMatrix(&matrixA, arrayWidth, arrayHeight);
+	tools::createEmptyMatrix(&matrixB, arrayWidth, arrayHeight);
+	tools::createEmptyMatrix(&matrixC, arrayWidth, arrayHeight);
+	tools::createEmptyMatrix(&matrixD, arrayWidth, arrayHeight);
+
+	// generate data
+	tools::generateInputSTL(&matrixA);
+	tools::generateInputSTL(&matrixB);
+	tools::generateInputSTL(&matrixC);
+
+	// add
+	if (profiler)
+		profiler->Start();
+	dmath::saxpy_2d(matrixA, matrixB, matrixC, &matrixD);
+	if (profiler)
+		profiler->Stop();
+	if (profiler)
+		profiler->Log();
+
+	return 0;
+}
+
+/////////// SEQUENTIAL SAXPY 2D via C /////////// 
+int exSequential_SAXPY_2D_C(ProfilerStruct* profiler)
+{
+	const size_t arrayWidth = 1024;
+	const size_t arrayHeight = 1024;
+	float* matrixA = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	float* matrixB = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	float* matrixC = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	float* matrixD = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	
+	// generate data
+	tools::generateInputC(matrixA, arrayWidth, arrayHeight);
+	tools::generateInputC(matrixB, arrayWidth, arrayHeight);
+	tools::generateInputC(matrixC, arrayWidth, arrayHeight);
+
+	// add
+	if (profiler)
+		profiler->Start();
+	dmath::saxpy_2d(matrixA, matrixB, matrixC, matrixD, arrayWidth, arrayHeight);
+	if (profiler)
+		profiler->Stop();
+	if (profiler)
+		profiler->Log();
+
+	free(matrixA);
+	free(matrixB);
+	free(matrixC);
+	free(matrixD);
+
+	return 0;
+}
+
+// FUNCTION LIST //
+vector<tools::FuncPtr> InitFuncList()
+{
+	vector<tools::FuncPtr> fs;
+	fs.push_back(tools::FuncPtr(&exCL_add, "Add Two Vectors Kernel"));
+	fs.push_back(tools::FuncPtr(&exSequential_addSTL, "Add Two Vectors Sequentially using C++ STL"));
+	fs.push_back(tools::FuncPtr(&exSequential_addC, "Add Two Vectors Sequentially using C"));
+	fs.push_back(tools::FuncPtr(&exCL_SAXPY_1D, "SAXPY 1D Kernel"));
+	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_1D_STL, "SAXPY 1D Sequentially using C++ STL"));
+	fs.push_back(tools::FuncPtr(&exCL_SAXPY_2D, "SAXPY 2D Kernel"));
+	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL"));
+	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_2D_C, "SAXPY 2D Sequentially using C"));
+	return fs;
+}
 
 /*
  * main execution routine
@@ -778,106 +1205,26 @@ bool ReadAndVerify(ocl_args_d_t *ocl, cl_uint width, cl_uint height, cl_int *inp
  */
 int _tmain(int argc, TCHAR* argv[])
 {
-    cl_int err;
-    ocl_args_d_t ocl;
-    cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
+	vector<tools::FuncPtr> funcs = InitFuncList();
 
-    LARGE_INTEGER perfFrequency;
-    LARGE_INTEGER performanceCountNDRangeStart;
-    LARGE_INTEGER performanceCountNDRangeStop;
-
-    cl_uint arrayWidth  = 1024;
-    cl_uint arrayHeight = 1024;
-
-    //initialize Open CL objects (context, queue, etc.)
-    if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
-    {
-        return -1;
-    }
-
-	// match with Class 1, Slide 83
-    // allocate working buffers. 
-    // the buffer should be aligned with 4K page and size should fit 64-byte cached line
-    cl_uint optimizedSize = ((sizeof(cl_int) * arrayWidth * arrayHeight - 1)/64 + 1) * 64;
-    cl_int* inputA  = (cl_int*)_aligned_malloc(optimizedSize, 4096);
-    cl_int* inputB  = (cl_int*)_aligned_malloc(optimizedSize, 4096);
-    cl_int* outputC = (cl_int*)_aligned_malloc(optimizedSize, 4096);
-    if (NULL == inputA || NULL == inputB || NULL == outputC)
-    {
-        LogError("Error: _aligned_malloc failed to allocate buffers.\n");
-        return -1;
-    }
-
-    //random input
-    generateInput(inputA, arrayWidth, arrayHeight);
-    generateInput(inputB, arrayWidth, arrayHeight);
-
-    // Create OpenCL buffers from host memory
-    // These buffers will be used later by the OpenCL kernel
-    if (CL_SUCCESS != CreateBufferArguments(&ocl, inputA, inputB, outputC, arrayWidth, arrayHeight))
-    {
-        return -1;
-    }
-
-     // Create and build the OpenCL program
-    if (CL_SUCCESS != CreateAndBuildProgram(&ocl))
-    {
-        return -1;
-    }
-
-    // Program consists of kernels.
-    // Each kernel can be called (enqueued) from the host part of OpenCL application.
-    // To call the kernel, you need to create it from existing program.
-    ocl.kernel = clCreateKernel(ocl.program, "Add", &err);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
-        return -1;
-    }
-
-    // Passing arguments into OpenCL kernel.
-    if (CL_SUCCESS != SetKernelArguments(&ocl))
-    {
-        return -1;
-    }
-
-    // Regularly you wish to use OpenCL in your application to achieve greater performance results
-    // that are hard to achieve in other ways.
-    // To understand those performance benefits you may want to measure time your application spent in OpenCL kernel execution.
-    // The recommended way to obtain this time is to measure interval between two moments:
-    //   - just before clEnqueueNDRangeKernel is called, and
-    //   - just after clFinish is called
-    // clFinish is necessary to measure entire time spending in the kernel, measuring just clEnqueueNDRangeKernel is not enough,
-    // because this call doesn't guarantees that kernel is finished.
-    // clEnqueueNDRangeKernel is just enqueue new command in OpenCL command queue and doesn't wait until it ends.
-    // clFinish waits until all commands in command queue are finished, that suits your need to measure time.
-    bool queueProfilingEnable = false;
-    if (queueProfilingEnable)
-        QueryPerformanceCounter(&performanceCountNDRangeStart);
-    // Execute (enqueue) the kernel
-    if (CL_SUCCESS != ExecuteAddKernel(&ocl, arrayWidth, arrayHeight))
-    {
-        return -1;
-    }
-    if (queueProfilingEnable)
-        QueryPerformanceCounter(&performanceCountNDRangeStop);
-
-    // The last part of this function: getting processed results back.
-    // use map-unmap sequence to update original memory area with output buffer.
-    ReadAndVerify(&ocl, arrayWidth, arrayHeight, inputA, inputB);
-
-    // retrieve performance counter frequency
-    if (queueProfilingEnable)
-    {
-        QueryPerformanceFrequency(&perfFrequency);
-        LogInfo("NDRange performance counter time %f ms.\n",
-            1000.0f*(float)(performanceCountNDRangeStop.QuadPart - performanceCountNDRangeStart.QuadPart) / (float)perfFrequency.QuadPart);
-    }
-
-    _aligned_free(inputA);
-    _aligned_free(inputB);
-    _aligned_free(outputC);
-
-    return 0;
+	int t;
+	cout << "Running Homework 1" << endl;
+	tools::PrintFuncs(funcs);
+	do
+	{
+		cout << "Input function to run (-1 to quit, -2 for instructions): " << endl;
+		cin >> t;
+		if (t == -2)
+		{
+			PrintFuncs(funcs);
+			continue;
+		}
+		else if (t == -1)
+			break;
+		int res = funcs[t]();
+		cout << "Results (0 = success): " << res << endl;
+	} while (t != -1);
+	return 0;
 }
+
 
