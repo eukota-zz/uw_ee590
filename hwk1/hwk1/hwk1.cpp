@@ -20,12 +20,27 @@
  * problem reports or change requests be submitted to it directly
  *****************************************************************************/
 
+// @TODO move openCL kernel interface functions to separate file
+// Retain only the _tmain() function and console interation
+// Consider writing a UI - ask Chris B for help?
+// Provide repo to David Pinney
+
+// @todo HWK 1 additions
+// allow input:
+//  1 - allow M and N size input designations on command
+//  2 - allow number of iteration count 
+// fix STL C++ to use 1D vector while calculating indices
+
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
 #include <memory.h>
 #include <vector>
+#include <map>
+#include "ProblemGroups.h"
+#include <string>
 
 #include "CL\cl.h"
 #include "utils.h"
@@ -37,6 +52,12 @@
 #include <Windows.h>
 
 using namespace std;
+
+namespace
+{
+int GLOBAL_M = 1024;
+int GLOBAL_N = 1024;
+}
 
 // Macros for OpenCL versions
 #define OPENCL_VERSION_1_2  1.2f
@@ -631,7 +652,7 @@ cl_uint ExecuteKernel(ocl_args_d_t *ocl, size_t *globalWorkSize, size_t workSize
     cl_int err = CL_SUCCESS;
 
 	// execute kernel
-    err = clEnqueueNDRangeKernel(ocl->commandQueue, ocl->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(ocl->commandQueue, ocl->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, NULL /* cl_even profileEvent */);
     if (CL_SUCCESS != err)
     {
         LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
@@ -742,7 +763,7 @@ bool ReadAndVerifySAXPY_1D(cl_command_queue* commandQueue, cl_mem* outputC, cl_u
 
 
 /////////// OpenCL ADD /////////// 
-int exCL_add(ProfilerStruct* profiler)
+int exCL_add()
 {
 	cl_int err;
 	ocl_args_d_t ocl;
@@ -808,22 +829,19 @@ int exCL_add(ProfilerStruct* profiler)
 		return -1;
 
 	// FINALLY! RUN!
-	if (profiler)
-		profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
 		return -1;
-	if (profiler)
-		profiler->Stop();
-	
+	profiler.Stop();
+	profiler.Log();
+
 	// The last part of this function: getting processed results back.
 	// use map-unmap sequence to update original memory area with output buffer.
 	if (ReadAndVerifyAdd(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, inputA, inputB))
 		LogInfo("Verified OpenCL Add Worked.\n");
 
-	// retrieve performance counter frequency
-	if (profiler)
-		profiler->Log();
 
 	_aligned_free(inputA);
 	_aligned_free(inputB);
@@ -840,7 +858,7 @@ int exCL_add(ProfilerStruct* profiler)
 }
 
 /////////// SEQUENTIAL ADD via C++ STL /////////// 
-int exSequential_addSTL(ProfilerStruct* profiler)
+int exSequential_addSTL()
 {
 	const size_t arrayWidth = 1024;
 	const size_t arrayHeight = 1024;
@@ -853,16 +871,11 @@ int exSequential_addSTL(ProfilerStruct* profiler)
 	tools::generateInputSTL(&matrixA);
 	tools::generateInputSTL(&matrixB);
 
-	if (profiler)
-		profiler->Start();
-
+	ProfilerStruct profiler;
+	profiler.Start();
 	dmath::add(matrixA, matrixB, &matrixC);
-
-	if (profiler)
-		profiler->Stop();
-
-	if (profiler)
-		profiler->Log();
+	profiler.Stop();
+	profiler.Log();
 
 	// verify 
 	for (size_t row = 0; row < arrayHeight; row++)
@@ -879,7 +892,7 @@ int exSequential_addSTL(ProfilerStruct* profiler)
 }
 
 /////////// SEQUENTIAL ADD via C /////////// 
-int exSequential_addC(ProfilerStruct* profiler)
+int exSequential_addC()
 {
 	const size_t arrayWidth = 1024;
 	const size_t arrayHeight = 1024;
@@ -894,13 +907,11 @@ int exSequential_addC(ProfilerStruct* profiler)
 	tools::generateInputC(matrixB, arrayWidth, arrayHeight);
 
 	// add
-	if (profiler)
-		profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	dmath::add(matrixA, matrixB, matrixC, arrayWidth, arrayHeight);
-	if (profiler)
-		profiler->Stop();
-	if (profiler)
-		profiler->Log();
+	profiler.Stop();
+	profiler.Log();
 
 	// free memory
 	free(matrixA);
@@ -910,7 +921,7 @@ int exSequential_addC(ProfilerStruct* profiler)
 }
 
 /////////// OpenCL SAXPY /////////// 
-int exCL_SAXPY_1D(ProfilerStruct* profiler)
+int exCL_SAXPY_1D()
 {
 	cl_int err;
 	ocl_args_d_t ocl;
@@ -972,13 +983,14 @@ int exCL_SAXPY_1D(ProfilerStruct* profiler)
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
 		return -1;
 
-	if (profiler) profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	size_t globalWorkSize[1] = { arrayWidth };
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 1))
 		return -1;
-	if (profiler) profiler->Stop();
+	profiler.Stop();
+	profiler.Log();
 	ReadAndVerifySAXPY_1D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
-	if (profiler) profiler->Log();
 
 	free(inputA);
 	_aligned_free(inputX);
@@ -998,7 +1010,7 @@ int exCL_SAXPY_1D(ProfilerStruct* profiler)
 }
 
 /////////// SEQUENTIAL SAXPY 1D via C++ STL /////////// 
-int exSequential_SAXPY_1D_STL(ProfilerStruct* profiler)
+int exSequential_SAXPY_1D_STL()
 {
 	const size_t width = 1024;
 	std::vector<float> matrixA(width);
@@ -1015,20 +1027,17 @@ int exSequential_SAXPY_1D_STL(ProfilerStruct* profiler)
 	}
 
 	// Run
-	if (profiler)
-		profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	dmath::saxpy_1d(Aval, matrixA, matrixB, &matrixC);
-	if (profiler)
-	{
-		profiler->Stop();
-		profiler->Log();
-	}
+	profiler.Stop();
+	profiler.Log();
 
 	return 0;
 }
 
 /////////// OpenCL SAXPY /////////// 
-int exCL_SAXPY_2D(ProfilerStruct* profiler)
+int exCL_SAXPY_2D()
 {
 	cl_int err;
 	ocl_args_d_t ocl;
@@ -1091,13 +1100,14 @@ int exCL_SAXPY_2D(ProfilerStruct* profiler)
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
 		return -1;
 
-	if (profiler) profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
 		return -1;
-	if (profiler) profiler->Stop();
+	profiler.Stop();
+	profiler.Log();
 	//ReadAndVerifySAXPY_2D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
-	if (profiler) profiler->Log();
 
 	_aligned_free(inputA);
 	_aligned_free(inputX);
@@ -1117,7 +1127,7 @@ int exCL_SAXPY_2D(ProfilerStruct* profiler)
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
-int exSequential_SAXPY_2D_STL(ProfilerStruct* profiler)
+int exSequential_SAXPY_2D_STL()
 {
 	const size_t arrayWidth = 1024;
 	const size_t arrayHeight = 1024;
@@ -1138,19 +1148,17 @@ int exSequential_SAXPY_2D_STL(ProfilerStruct* profiler)
 	tools::generateInputSTL(&matrixC);
 
 	// add
-	if (profiler)
-		profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	dmath::saxpy_2d(matrixA, matrixB, matrixC, &matrixD);
-	if (profiler)
-		profiler->Stop();
-	if (profiler)
-		profiler->Log();
+	profiler.Stop();
+	profiler.Log();
 
 	return 0;
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C /////////// 
-int exSequential_SAXPY_2D_C(ProfilerStruct* profiler)
+int exSequential_SAXPY_2D_C()
 {
 	const size_t arrayWidth = 1024;
 	const size_t arrayHeight = 1024;
@@ -1165,13 +1173,11 @@ int exSequential_SAXPY_2D_C(ProfilerStruct* profiler)
 	tools::generateInputC(matrixC, arrayWidth, arrayHeight);
 
 	// add
-	if (profiler)
-		profiler->Start();
+	ProfilerStruct profiler;
+	profiler.Start();
 	dmath::saxpy_2d(matrixA, matrixB, matrixC, matrixD, arrayWidth, arrayHeight);
-	if (profiler)
-		profiler->Stop();
-	if (profiler)
-		profiler->Log();
+	profiler.Stop();
+	profiler.Log();
 
 	free(matrixA);
 	free(matrixB);
@@ -1181,49 +1187,94 @@ int exSequential_SAXPY_2D_C(ProfilerStruct* profiler)
 	return 0;
 }
 
-// FUNCTION LIST //
-vector<tools::FuncPtr> InitFuncList()
+int GetInput(const std::string& prompt)
 {
-	vector<tools::FuncPtr> fs;
-	fs.push_back(tools::FuncPtr(&exCL_add, "Add Two Vectors Kernel"));
-	fs.push_back(tools::FuncPtr(&exSequential_addSTL, "Add Two Vectors Sequentially using C++ STL"));
-	fs.push_back(tools::FuncPtr(&exSequential_addC, "Add Two Vectors Sequentially using C"));
-	fs.push_back(tools::FuncPtr(&exCL_SAXPY_1D, "SAXPY 1D Kernel"));
-	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_1D_STL, "SAXPY 1D Sequentially using C++ STL"));
-	fs.push_back(tools::FuncPtr(&exCL_SAXPY_2D, "SAXPY 2D Kernel"));
-	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL"));
-	fs.push_back(tools::FuncPtr(&exSequential_SAXPY_2D_C, "SAXPY 2D Sequentially using C"));
-	return fs;
+	std::cout << prompt;
+	int v;
+	std::cin >> v;
+	return v;
 }
 
-/*
- * main execution routine
- * Basically it consists of three parts:
- *   - generating the inputs
- *   - running OpenCL kernel
- *   - reading results of processing
- */
+int SetHwk1ValueM()
+{
+	GLOBAL_M = GetInput("Enter value for M:");
+	return 0;
+}
+
+int SetHwk1ValueN()
+{
+	GLOBAL_N = GetInput("Enter value for N:");
+	return 0;
+}
+
+
+class HWK1Class : public GroupManager
+{
+public:
+	HWK1Class() : GroupManager("Homework 1")
+	{
+		groups_ = GroupFactory();
+	}
+	virtual std::string ProblemGroupName() { return "Homework 1"; }
+	virtual std::string ProblemName() { return "Test"; }
+	std::map<int, ProblemGroup*> GroupFactory();
+};
+
+// FUNCTION AND INPUT FACTORY
+std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
+{
+	std::map<int, ProblemGroup*> pgs;
+	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
+	InputControl->problems_[1] = new Problem(&SetHwk1ValueM, "Set M Value");
+	InputControl->problems_[2] = new Problem(&SetHwk1ValueN, "Set N Value");
+	pgs[InputControl->GroupNum()] = InputControl;
+
+	ProblemGroup* Homework1 = new ProblemGroup(1, "Homework 1");
+	Homework1->problems_[1] = new Problem(&exCL_add, "Add Two Vectors Kernel");
+	Homework1->problems_[2] = new Problem(&exSequential_addSTL, "Add Two Vectors Sequentially using C++ STL");
+	Homework1->problems_[3] = new Problem(&exSequential_addC, "Add Two Vectors Sequentially using C");
+	Homework1->problems_[4] = new Problem(&exCL_SAXPY_1D, "SAXPY 1D Kernel");
+	Homework1->problems_[5] = new Problem(&exSequential_SAXPY_1D_STL, "SAXPY 1D Sequentially using C++ STL");
+	Homework1->problems_[6] = new Problem(&exCL_SAXPY_2D, "SAXPY 2D Kernel");
+	Homework1->problems_[7] = new Problem(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL");
+	Homework1->problems_[8] = new Problem(&exSequential_SAXPY_2D_C, "SAXPY 2D Sequentially using C");
+	pgs[Homework1->GroupNum()] = Homework1;
+
+	ProblemGroup* Homework2 = new ProblemGroup(2, "Homework 2");
+	pgs[Homework2->GroupNum()] = Homework2;
+	return pgs;
+}
+
+
+
+void PrintInstructions()
+{
+	cout << endl << "MAIN MENU:" << endl
+		<< "// 1 --> Homework 1 //" << endl
+		<< "// Q --> Quit       //" << endl
+		<< endl;
+}
 int _tmain(int argc, TCHAR* argv[])
 {
-	vector<tools::FuncPtr> funcs = InitFuncList();
-
-	int t;
-	cout << "Running Homework 1" << endl;
-	tools::PrintFuncs(funcs);
+	bool runTests = false;
+	string input;
 	do
 	{
-		cout << "Input function to run (-1 to quit, -2 for instructions): " << endl;
-		cin >> t;
-		if (t == -2)
+		int res = 0;
+		PrintInstructions();
+		cin >> input;
+		if (input == "1")
 		{
-			PrintFuncs(funcs);
-			continue;
+			HWK1Class hwk1c;
+			res = hwk1c.Run();
 		}
-		else if (t == -1)
+		if (input == "Q" || input == "q")
+		{
 			break;
-		int res = funcs[t]();
+		}
 		cout << "Results (0 = success): " << res << endl;
-	} while (t != -1);
+	} while (true);
+
 	return 0;
 }
 

@@ -21,6 +21,8 @@ namespace tools
 
 	void PrintFuncs(const std::vector<FuncPtr>& funcs);
 
+	std::vector<std::string> split(const std::string& str, const char* delim);
+
 	void generateInputCL(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight);
 
 	void generateInputCMatrix(float arr[1024][1024]);
