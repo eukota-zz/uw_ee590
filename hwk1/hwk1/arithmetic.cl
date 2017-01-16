@@ -40,5 +40,6 @@ __kernel void SAXPY_2D(__global float* pA, __global float* pX, __global float* p
 		const int innerColId = inner*xyz_width + col;
 		pZ[xyz_id] += pA[innerRowId] * pX[innerColId];
 	}
+	// When doing extra-careful debugging...
 	// printf("running for (%d,%d): %f\n",row,col,pZ[xyz_id]);
 }

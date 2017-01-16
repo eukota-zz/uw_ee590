@@ -5,8 +5,8 @@
 class Problem
 {
 public:
-	Problem(int(*prob)(), const std::string& annotation) : problem_(prob), problem_annotation_(annotation) {}
-	virtual int operator()()
+	Problem(float(*prob)(), const std::string& annotation) : problem_(prob), problem_annotation_(annotation) {}
+	virtual float operator()()
 	{
 		return problem_();
 	};
@@ -14,7 +14,7 @@ public:
 	std::string Annotation() { return problem_annotation_; }
 private:
 	std::string problem_annotation_;
-	int(*problem_)();
+	float(*problem_)();
 };
 
 ////////////// Groups
@@ -22,7 +22,7 @@ class ProblemGroup
 {
 public:
 	ProblemGroup(int groupNum, const std::string& annotation) : problem_group_num_(groupNum), problem_group_annotation_(annotation) {}
-	int operator()(int problem);
+	float operator()(int problem);
 
 	std::map<int, Problem*> problems_;
 	int GroupNum() { return problem_group_num_; }
@@ -41,7 +41,7 @@ public:
 	GroupManager(const std::string& name);
 	~GroupManager();
 	void PrintGroupMenu();
-	int Run();
+	float Run();
 	virtual std::string ProblemGroupName() { return std::string(); }
 	virtual std::string ProblemName() { return std::string(); }
 

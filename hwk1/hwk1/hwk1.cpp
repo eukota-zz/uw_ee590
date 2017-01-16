@@ -709,7 +709,7 @@ cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem
 }
 
 /////////// OpenCL ADD /////////// 
-int exCL_add()
+float exCL_add()
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -773,7 +773,7 @@ int exCL_add()
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
 		return -1;
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 	
 	if (!SKIP_VERIFICATION)
 	{
@@ -789,17 +789,25 @@ int exCL_add()
 		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
 		// Verify the results
 		unsigned int size = arrayWidth * arrayHeight;
+		bool failed = false;
 		for (unsigned int k = 0; k < size; ++k)
 		{
 			if (resultPtr[k] != inputA[k] + inputB[k])
 			{
 				LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
+				failed = true;
 			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
 
 		// Unmap Host Buffer from Local Data
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
 	_aligned_free(inputA);
@@ -813,11 +821,11 @@ int exCL_add()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 	
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL ADD via C /////////// 
-int exSequential_addC()
+float exSequential_addC()
 {
 	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
@@ -837,29 +845,39 @@ int exSequential_addC()
 	profiler.Start();
 	dmath::add(matrixA, matrixB, matrixC, arrayWidth, arrayHeight);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
 		// verify
+		bool failed = false;
 		for (size_t i = 0; i < matrixSize; i++)
 		{
 			const int row = i % arrayWidth;
 			const int col = (i - row) / arrayWidth;
 			if (matrixC[i] != matrixA[i] + matrixB[i])
+			{
 				LogError("Verification failed at (%d,%d): (%f + %f = %f)\n", row, col, matrixA[i], matrixB[i], matrixC[i]);
+				failed = true;
+			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
 	// free memory
 	free(matrixA);
 	free(matrixB);
 	free(matrixC);
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL ADD via C++ STL /////////// 
-int exSequential_addSTL()
+float exSequential_addSTL()
 {
 	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
@@ -874,25 +892,35 @@ int exSequential_addSTL()
 	profiler.Start();
 	dmath::add(matrixA, matrixB, &matrixC);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
 		// Verify 
+		bool failed = false;
 		for (size_t i = 0; i < matrixSize; i++)
 		{
 			const int row = i % arrayWidth;
 			const int col = (i - row) / arrayWidth;
 			if (matrixC[i] != matrixA[i] + matrixB[i])
+			{
 				LogError("Verification failed at (%d,%d): (%d + %d = %d)\n", row, col, matrixA[i], matrixB[i], matrixC[i]);
+				failed = true;
+			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
-	return 0;
+	return runTime;
 }
 
 /////////// OpenCL SAXPY /////////// 
-int exCL_SAXPY_1D()
+float exCL_SAXPY_1D()
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -961,7 +989,7 @@ int exCL_SAXPY_1D()
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 1))
 		return -1;
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
@@ -977,18 +1005,27 @@ int exCL_SAXPY_1D()
 		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
 		// Verify the results
 		const size_t size = (size_t)arrayWidth;
+		bool failed = false;
 		for (size_t i = 0; i < size; ++i)
 		{
 			if (resultPtr[i] != inputA[0] * inputX[i] + inputY[i])
 			{
 				LogError("Verification failed at %d: (%f * %f + %f = %f)\n", i, inputA[0], inputX[i], inputY[i], resultPtr[i]);
+				failed = true;
 			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
 
 		// Unmap Host Buffer from Local Data
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
 	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
+	}
+
 
 	free(inputA);
 	_aligned_free(inputX);
@@ -1004,11 +1041,11 @@ int exCL_SAXPY_1D()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL SAXPY 1D via C /////////// 
-int exSequential_SAXPY_1D_C()
+float exSequential_SAXPY_1D_C()
 {
 	// allocate memory
 	const size_t width = GLOBAL_ARRAY_WIDTH;
@@ -1026,16 +1063,26 @@ int exSequential_SAXPY_1D_C()
 	profiler.Start();
 	dmath::saxpy_1d(Aval, matrixA, matrixB, matrixC, width);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
 		// Verify
+		bool failed = false;
 		for (size_t i = 0; i < width; i++)
 		{
 			if (matrixC[i] != Aval*matrixA[i] + matrixB[i])
+			{
 				LogError("Verification failed at %d: (%f*%f + %f = %f)\n", i, Aval, matrixA[i], matrixB[i], matrixC[i]);
+				failed = true;
+			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
 	// free memory
@@ -1043,11 +1090,11 @@ int exSequential_SAXPY_1D_C()
 	free(matrixB);
 	free(matrixC);
 
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL SAXPY 1D via C++ STL /////////// 
-int exSequential_SAXPY_1D_STL()
+float exSequential_SAXPY_1D_STL()
 {
 	const size_t width = GLOBAL_ARRAY_WIDTH;
 	std::vector<float> matrixA(width, 0.0);
@@ -1067,24 +1114,34 @@ int exSequential_SAXPY_1D_STL()
 	profiler.Start();
 	dmath::saxpy_1d(Aval, matrixA, matrixB, &matrixC);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
 		// verify
+		bool failed = false;
 		for (size_t i = 0; i < width; i++)
 		{
 			if (matrixC[i] != Aval*matrixA[i] + matrixB[i])
+			{
 				LogError("Verification failed at (d: (%f*%f + %f = %f)\n", i, Aval, matrixA[i], matrixB[i], matrixC[i]);
+				failed = true;
+			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
 	// no need to clear memory - C++ vectors will delete on going out of scope
-	return 0;
+	return runTime;
 }
 
 /////////// OpenCL SAXPY 2D /////////// 
-int exCL_SAXPY_2D()
+float exCL_SAXPY_2D()
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -1186,7 +1243,7 @@ int exCL_SAXPY_2D()
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
 		return -1;
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
 	if (!SKIP_VERIFICATION)
 	{
@@ -1203,6 +1260,7 @@ int exCL_SAXPY_2D()
 		// Verify the results
 		const size_t a_width = arrayValM;
 		const size_t xyz_width = arrayValN;
+		bool failed = false;
 		for (size_t row = 0; row < (size_t)arrayValM; row++)
 		{
 			for (size_t col = 0; col < (size_t)arrayValN; col++)
@@ -1219,13 +1277,22 @@ int exCL_SAXPY_2D()
 				}
 				const size_t resultsId = row*(arrayValN)+col;
 				if (singleEntry != resultPtr[resultsId])
+				{
 					LogError("Verification failed at %d: expected %f; actual %f\n", resultsId, singleEntry, resultPtr[resultsId]);
+					failed = true;
+				}
 			}
 		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
 
 		// Unmap Host Buffer from Local Data
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
+	else
+	{
+		LogInfo("Verification skipped.\n");
 	}
 
 	_aligned_free(inputA);
@@ -1242,11 +1309,11 @@ int exCL_SAXPY_2D()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C /////////// 
-int exSequential_SAXPY_2D_C()
+float exSequential_SAXPY_2D_C()
 {
 	const size_t arrayValM = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayValN = GLOBAL_ARRAY_HEIGHT;
@@ -1265,65 +1332,77 @@ int exSequential_SAXPY_2D_C()
 	profiler.Start();
 	dmath::saxpy_2d(matrixA, matrixB, matrixC, matrixD, arrayValM, arrayValN);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
+
+	LogInfo("Verification skipped.\n");
 
 	free(matrixA);
 	free(matrixB);
 	free(matrixC);
 	free(matrixD);
 
-	return 0;
+	return runTime;
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
-int exSequential_SAXPY_2D_STL()
+float exSequential_SAXPY_2D_STL()
 {
-	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
-	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
-	std::vector<std::vector<float> > matrixA;
-	std::vector<std::vector<float> > matrixB;
-	std::vector<std::vector<float> > matrixC;
-	std::vector<std::vector<float> > matrixD;
-	
+	const size_t M = GLOBAL_ARRAY_WIDTH;
+	const size_t N = GLOBAL_ARRAY_HEIGHT;
+	std::vector<float> matrixA(M*M);
+	std::vector<float> matrixB(M*N);
+	std::vector<float> matrixC(M*N);
+	std::vector<float> matrixD(M*N);
+
 	// generate data
-//	tools::generateInputSTL(&matrixA);
-//	tools::generateInputSTL(&matrixB);
-//	tools::generateInputSTL(&matrixC);
+	tools::generateInputSTL(&matrixA);
+	tools::generateInputSTL(&matrixB);
+	tools::generateInputSTL(&matrixC);
 
 	// add
 	ProfilerStruct profiler;
 	profiler.Start();
-	dmath::saxpy_2d(matrixA, matrixB, matrixC, &matrixD);
+	dmath::saxpy_2d(matrixA, matrixB, matrixC, M, N, &matrixD);
 	profiler.Stop();
-	profiler.Log();
+	float runTime = profiler.Log();
 
-	return 0;
+	LogInfo("Verification skipped.\n");
+
+	return runTime;
 }
 
-/////////// Input Gathering for M and N ////////////
-int GetInput(const std::string& prompt)
+/////////// Input Gathering /////////////
+float GetInput(const std::string& prompt)
 {
 	std::cout << prompt;
-	int v;
+	float v;
 	std::cin >> v;
 	return v;
 }
-int SetHwk1ValueM()
+float SetHwk1ValueM()
 {
-	GLOBAL_ARRAY_WIDTH = GetInput("Enter value for M:");
+	GLOBAL_ARRAY_WIDTH = (int)GetInput("Enter value for M:");
 	return 0;
 }
-int SetHwk1ValueN()
+float SetHwk1ValueN()
 {
-	GLOBAL_ARRAY_HEIGHT = GetInput("Enter value for N:");
+	GLOBAL_ARRAY_HEIGHT = (int)GetInput("Enter value for N:");
 	return 0;
 }
-int SkipVerify()
+float SkipVerify()
 {
 	cout << "Enter 1 to Skip Verification in functions. Enter 0 to Do Verification: ";
 	unsigned int i = (unsigned int)SKIP_VERIFICATION;
 	cin >> i;
-	SKIP_VERIFICATION = i;
+	SKIP_VERIFICATION = (bool)i;
+	return 0;
+}
+float RunCount()
+{
+	cout << "Enter number of runs to do: ";
+	unsigned int i = dmath::RUN_COUNT;
+	cin >> i;
+	dmath::RUN_COUNT = i;
 	return 0;
 }
 
@@ -1347,6 +1426,7 @@ std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 	InputControl->problems_[1] = new Problem(&SetHwk1ValueM, "Set M Value (defaults to 1024)");
 	InputControl->problems_[2] = new Problem(&SetHwk1ValueN, "Set N Value (defaults to 1024)");
 	InputControl->problems_[3] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
+	InputControl->problems_[4] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
 	pgs[InputControl->GroupNum()] = InputControl;
 
 	ProblemGroup* Homework1 = new ProblemGroup(1, "Homework 1");
@@ -1361,8 +1441,6 @@ std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 	Homework1->problems_[9] = new Problem(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL");
 	pgs[Homework1->GroupNum()] = Homework1;
 
-	ProblemGroup* Homework2 = new ProblemGroup(2, "Homework 2");
-	pgs[Homework2->GroupNum()] = Homework2;
 	return pgs;
 }
 

@@ -2,16 +2,24 @@
 #include <string>
 #include <vector>
 #include "tools.h"
+#include "utils.h"
 #include "ProblemGroups.h"
+#include "arithmetic.h"
 
-int ProblemGroup::operator()(int problem)
+float ProblemGroup::operator()(int problem)
 {
 	if (problems_.find(problem) == problems_.end())
 	{
 		std::cout << "WARNING: " << problem_group_num_ << "." << problem << " not found" << std::endl;
-		return -1;
+		return 0.0;
 	}
-	return problems_[problem]->operator()();
+	float timeProfile = 0.0;
+	const size_t runCount = dmath::RUN_COUNT;
+	for (int i = 0; i < runCount; i++)
+	{
+		timeProfile += problems_[problem]->operator()();
+	}
+	return timeProfile / (float)dmath::RUN_COUNT;
 }
 GroupManager::GroupManager(const std::string& name)
 	: GroupName(name)
@@ -36,9 +44,9 @@ void GroupManager::PrintGroupMenu()
 	}
 }
 
-int GroupManager::Run()
+float GroupManager::Run()
 {
-	int result = 0;
+	float result = 0;
 	std::cout << "Running new " << GroupName.c_str() << " Tests" << std::endl;
 	std::string input;
 	do
@@ -67,8 +75,7 @@ int GroupManager::Run()
 		}
 		std::cout << "Running " << ProblemGroupName() << " " << problemgroup << ": " /*<< ProblemName() << " " */ << groups_[problemgroup]->problems_[problem]->Annotation() << std::endl;
 		result = groups_[problemgroup]->operator()(problem);
-		if (result != 0)
-			break;
+		LogInfo("Average time: %f\n", result);
 
 	} while (atoi(input.c_str()) != -1);
 	return result;

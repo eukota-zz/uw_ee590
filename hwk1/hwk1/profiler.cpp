@@ -24,8 +24,10 @@ void ProfilerStruct::AcquireFrequency()
 }
 
 // Print Profiler Log
-void ProfilerStruct::Log()
+float ProfilerStruct::Log()
 {
 	AcquireFrequency();
-	LogInfo("Performance Counter Time %f ms.\n", 1000.0f*(float)(CountStop.QuadPart - CountStart.QuadPart) / (float)Frequency.QuadPart);
+	float runTime = 1000.0f*(float)(CountStop.QuadPart - CountStart.QuadPart) / (float)Frequency.QuadPart;
+	LogInfo("Performance Counter Time %f ms.\n", runTime);
+	return runTime;
 }
