@@ -21,7 +21,7 @@
  *****************************************************************************/
 
 // @TODO move openCL kernel interface functions to separate file
-// Retain only the _tmain() function and console interation
+// Retain only the _tmain() function and console interaction
 // Consider writing a UI - ask Chris B for help?
 // Provide repo to David Pinney
 
@@ -532,11 +532,8 @@ int SetupOpenCL(ocl_args_d_t *ocl, cl_device_type deviceType)
 }
 
 
-/* 
- * Create and build OpenCL program from its source code
- *
- * Dependencies: Imports .cl file by name
- */
+// Create and build OpenCL program from its source code
+// @param[in] filename name of opencl kernel file to be read
 int CreateAndBuildProgram(ocl_args_d_t *ocl, const std::string& filename)
 {
     cl_int err = CL_SUCCESS;
@@ -593,7 +590,7 @@ Finish:
         source = NULL;
     }
 
-    return err;
+	return err;
 }
 
 
@@ -644,9 +641,9 @@ cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum)
 	return err;
 }
 
-/*
- * Execute the kernel
- */
+// Execute the Kernel
+// @param[in] globalWorkSize size_t array of passed in constants to use
+// @param[in] workSizeCount size of the globalWorkSize array
 cl_uint ExecuteKernel(ocl_args_d_t *ocl, size_t *globalWorkSize, size_t workSizeCount)
 {
     cl_int err = CL_SUCCESS;
@@ -670,51 +667,46 @@ cl_uint ExecuteKernel(ocl_args_d_t *ocl, size_t *globalWorkSize, size_t workSize
     return CL_SUCCESS;
 }
 
-/*
- * "Read" the result buffer (mapping the buffer to the host memory address)
- */
-bool ReadAndVerifyAdd(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_uint height, cl_float *inputA, cl_float *inputB)
+
+// Forward declared for use by MapHostBufferToLocal()
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem);
+// Map Host Memory to Local Memory
+// BE SURE TO CALL ReleaseBuffer AFTER DONE USING!
+// @param[in] hostMem cl_mem to map from
+// @param[out] result local memory to map to
+cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_uint width, cl_uint height, cl_float** localMem)
 {
-    cl_int err = CL_SUCCESS;
-    bool result = true;
+	cl_int err = CL_SUCCESS;
 
-    // Enqueue a command to map the buffer object (ocl->dstMem) into the host address space and returns a pointer to it
-    // The map operation is blocking
-    cl_float *resultPtr = (cl_float *)clEnqueueMapBuffer(*commandQueue, *outputC, true, CL_MAP_READ, 0, sizeof(cl_uint) * width * height, 0, NULL, NULL, &err);
+	const bool blockingMap = true;
+	*localMem = (cl_float *)clEnqueueMapBuffer(*commandQueue, *hostMem, blockingMap, CL_MAP_READ, 0 /*buffer offset*/, sizeof(cl_uint) * width * height, 0, NULL, NULL, &err);
 
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clEnqueueMapBuffer returned %s\n", TranslateOpenCLError(err));
-        return false;
-    }
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clEnqueueMapBuffer returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
 
-    // Call clFinish to guarantee that output region is updated
-    err = clFinish(*commandQueue);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
-    }
+	// Call clFinish to guarantee that output region is updated
+	err = clFinish(*commandQueue);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
+		UnmapHostBufferFromLocal(commandQueue, hostMem, *localMem); // attempt to unmap to clear 
+	}
+	return err;
+}
 
-    // We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
-    // Verify the results
-    unsigned int size = width * height;
-    for (unsigned int k = 0; k < size; ++k)
-    {
-        if (resultPtr[k] != inputA[k] + inputB[k])
-        {
-            LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
-            result = false;
-        }
-    }
+// Unmap Host Memory from Local Memory
+// TO BE CALLED AFTER MapBuffer()
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem)
+{
+	// Unmapped the output buffer before releasing it
+	cl_int err = clEnqueueUnmapMemObject(*commandQueue, *hostMem, localMem, 0, NULL, NULL);
+	if (CL_SUCCESS != err)
+		LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
 
-     // Unmapped the output buffer before releasing it
-    err = clEnqueueUnmapMemObject(*commandQueue, *outputC, resultPtr, 0, NULL, NULL);
-    if (CL_SUCCESS != err)
-    {
-        LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
-    }
-
-    return result;
+	return err;
 }
 
 bool ReadAndVerifySAXPY_1D(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_float inputA, cl_float *inputX, cl_float *inputY)
@@ -761,6 +753,10 @@ bool ReadAndVerifySAXPY_1D(cl_command_queue* commandQueue, cl_mem* outputC, cl_u
 	return result;
 }
 
+bool ReadAndVerifySAXPY_2D(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_float* inputA, cl_float* inpuX, cl_float* inputY)
+{
+	return false;
+}
 
 /////////// OpenCL ADD /////////// 
 int exCL_add()
@@ -768,16 +764,17 @@ int exCL_add()
 	cl_int err;
 	ocl_args_d_t ocl;
 	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
-	cl_mem           srcA;              // hold first source buffer
-	cl_mem           srcB;              // hold second source buffer
-	cl_mem           dstMem;            // hold destination buffer
-
-	cl_uint arrayWidth = 1024;
-	cl_uint arrayHeight = 1024;
 
 	//initialize Open CL objects (context, queue, etc.)
 	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
 		return -1;
+
+	// Local Variables
+	cl_mem           srcA;              // hold first source buffer
+	cl_mem           srcB;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
+	cl_uint arrayWidth = 1024;
+	cl_uint arrayHeight = 1024;
 
 	// allocate working buffers. 
 	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
@@ -837,11 +834,29 @@ int exCL_add()
 	profiler.Stop();
 	profiler.Log();
 
-	// The last part of this function: getting processed results back.
-	// use map-unmap sequence to update original memory area with output buffer.
-	if (ReadAndVerifyAdd(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, inputA, inputB))
-		LogInfo("Verified OpenCL Add Worked.\n");
+	// Map Host Buffer to Local Data
+	cl_float* resultPtr = NULL;
+	if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, &resultPtr))
+	{
+		LogError("Error: clEnqueueMapBuffer failed.\n");
+		return -1;
+	}
 
+	// VERIFY DATA
+	// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+	// Verify the results
+	unsigned int size = arrayWidth * arrayHeight;
+	for (unsigned int k = 0; k < size; ++k)
+	{
+		if (resultPtr[k] != inputA[k] + inputB[k])
+		{
+			LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
+		}
+	}
+
+	// Unmap Host Buffer from Local Data
+	if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
+		LogInfo("UnmapHostBufferFromLocal Failed.\n");
 
 	_aligned_free(inputA);
 	_aligned_free(inputB);
@@ -926,13 +941,14 @@ int exCL_SAXPY_1D()
 	cl_int err;
 	ocl_args_d_t ocl;
 	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
+	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
+		return -1;
+
+	// Local Variables
 	cl_mem           scalarA;
 	cl_mem           srcX;              // hold first source buffer
 	cl_mem           srcY;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-
-	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
-		return -1;
 
 	// allocate working buffers. 
 	// the buffer should be aligned with 4K page and size should fit 64-byte cached line

@@ -3,6 +3,18 @@
 
 namespace dmath
 {
+	// Verifies that matrixC == matrixA + matrixB
+	bool verifyAdd(float* matrixA, float* matrixB, float* matrixC, size_t width, size_t height)
+	{
+		const size_t s = width*height;
+		for (size_t i = 0; i < s; i++)
+		{
+			if (matrixC[i] != matrixA[i] + matrixB[i])
+				return false;
+		}
+		return true;
+	}
+
 
 	// Sequential Add with C++ STL
 	/// @param[in] pA NxN matrix
