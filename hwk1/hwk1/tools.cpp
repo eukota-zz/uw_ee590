@@ -19,29 +19,44 @@ namespace tools
 		}
 	}
 
+	std::vector<std::string> split(const std::string& str, const char* delim)
+	{
+		std::vector<std::string> v;
+		if (str.empty())
+			return v;
+
+		size_t begin = 0;
+		for (size_t i = 0; i <= str.size(); i++)
+		{
+			if (str[i] != *delim && i != str.size())
+				continue;
+
+			v.push_back(str.substr(begin, i - begin));
+			begin = i + 1;
+		}
+		return v;
+	}
+
 	/*
 	* Generate random value for input buffers
 	*/
 	void generateInputCL(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
 	{
-		srand(12345);
-
 		// random initialization of input
 		size_t array_size = arrayWidth * arrayHeight;
 		for (size_t i = 0; i < array_size; ++i)
 		{
-			inputArray[i] = (cl_float)(rand() % 1000); // mod to fix possible floating point comparison issues found during office hours with Logan
+			inputArray[i] = (cl_float)(rand() % 100); // mod to fix possible floating point comparison issues found during office hours with Logan
 		}
 	}
 
 	void generateInputCMatrix(float arr[1024][1024])
 	{
-		srand(12345);
 		for (size_t i = 0; i < 1024; i++)
 		{
 			for (size_t j = 0; j < 1024; j++)
 			{
-				arr[i][j] = (float)(rand() % 1000);
+				arr[i][j] = (float)(rand() % 100);
 			}
 		}
 
@@ -49,67 +64,39 @@ namespace tools
 
 	void generateInputC(float* inputArray, size_t arrayWidth, size_t arrayHeight)
 	{
-		srand(12345);
-
 		// random initialization of input
 		size_t array_size = arrayWidth * arrayHeight;
 		for (size_t i = 0; i < array_size; ++i)
 		{
-			inputArray[i] = (float)(rand() % 1000); // mod to fix possible floating point comparison issues found during office hours with Logan
-		}
-	}
-
-	// allocate space for a STL matrix
-	void createEmptyMatrix(std::vector<std::vector<float> >* inputMatrix, size_t arrayWidth, size_t arrayHeight)
-	{
-		if (!inputMatrix)
-			throw "invalid input";
-		inputMatrix->clear();
-		for (size_t i = 0; i < arrayHeight; i++)
-		{
-			std::vector<float> v(arrayWidth);
-			inputMatrix->push_back(v);
+			inputArray[i] = (float)(rand() % 100); // mod to fix possible floating point comparison issues found during office hours with Logan
 		}
 	}
 
 	// fill STL matrix with random numbers
-	void generateInputSTL(std::vector<std::vector<float> >* inputMatrix)
+	void generateInputSTL(std::vector<float>* inputMatrix)
 	{
-		if (!inputMatrix || inputMatrix->empty() || inputMatrix->front().empty())
+		if (!inputMatrix || inputMatrix->empty())
 			throw "invalid input";
 
-		// random number seed
-		srand(12345);
-
-		const size_t width = inputMatrix->front().size();
-		const size_t height = inputMatrix->size();
-		for (size_t row = 0; row < height; row++)
+		const size_t mSize = inputMatrix->size();
+		for (size_t i = 0; i < mSize; i++)
 		{
-			for (size_t col = 0; col < width; col++)
-			{
-				(*inputMatrix)[row][col] = (float)(rand() % 1000);
-			}
+			(*inputMatrix)[i] = (float)(rand() % 100);
 		}
 	}
 
-	bool verifyEqual(const std::vector<std::vector<float> >& pA, const std::vector<std::vector<float> >& pB)
+	bool verifyEqual(const std::vector<float>& pA, const std::vector<float>& pB)
 	{
 		if (pA.size() != pB.size())
 			return false;
 		if (pA.empty() && pB.empty())
 			return true;
-		if (pA.front().size() != pB.front().size())
-			return false;
 
-		const size_t width = pA.front().size();
-		const size_t height = pA.size();
-		for (size_t row = 0; row < height; row++)
+		const size_t mSize = pA.size();
+		for (size_t i = 0; i < mSize; i++)
 		{
-			for (size_t col = 0; col < width; col++)
-			{
-				if (pA[row][col] != pB[row][col])
-					return false;
-			}
+			if (pA[i] != pB[i])
+				return false;
 		}
 		return true;
 	}

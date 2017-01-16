@@ -179,6 +179,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ProblemGroups.cpp" />
     <ClCompile Include="profiler.cpp" />
     <ClCompile Include="hwk1.cpp" />
     <ClCompile Include="arithmetic.cpp" />
@@ -187,6 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arithmetic.h" />
+    <ClInclude Include="ProblemGroups.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="profiler.h" />
     <ClInclude Include="hwk1.h" />
