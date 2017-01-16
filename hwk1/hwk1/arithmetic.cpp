@@ -17,24 +17,17 @@ namespace dmath
 
 
 	// Sequential Add with C++ STL
-	/// @param[in] pA NxN matrix
-	/// @param[in] pB NxN matrix
-	/// @param[out] pC NxN matrix to populate with pA + pB
-	void add(const std::vector<std::vector<float> >& pA, const std::vector< std::vector<float> >& pB, std::vector<std::vector<float> >* pC)
+	// @param[in] pA NxN matrix
+	// @param[in] pB NxN matrix
+	// @param[out] pC NxN matrix to populate with pA + pB
+	void add(const std::vector<float>& pA, const std::vector<float>& pB, std::vector<float>* pC)
 	{
 		if (pA.empty() || pB.empty() || pA.size() != pB.size() || !pC)
 			throw "invalid input";
 
-		const size_t width = pA.front().size();
-		const size_t height = pA.size();
-
-		for (size_t x = 0; x < width; x++)
-		{
-			for (size_t y = 0; y < height; y++)
-			{
-				(*pC)[x][y] = pA[x][y] + pB[x][y];
-			}
-		}
+		const size_t mSize = pA.size();
+		for (size_t i = 0; i<mSize; i++)
+			(*pC)[i] = pA[i] + pB[i];
 	}
 
 	// Sequential Add with C
@@ -43,6 +36,18 @@ namespace dmath
 		const size_t s = width*height;
 		for(size_t i=0; i<s; i++)
 			matrixC[i] = matrixA[i] + matrixB[i];
+	}
+
+	// @param[in] pA scalar value
+	// @param[in] pX N length vector
+	// @param[in] pY N length vector
+	// @param[out] pZ output results of pA*pX+pY
+	void saxpy_1d(float pA, float* pX, float* pY, float* pZ, size_t width)
+	{
+		for (size_t i = 0; i < width; i++)
+		{
+			pZ[i] = pA*pX[i] + pY[i];
+		}
 	}
 
 	// @param[in] pA scalar value
@@ -91,22 +96,23 @@ namespace dmath
 		}
 	}
 
-	void saxpy_2d(float* pA, float* pX, float* pY, float* pZ, size_t width, size_t height)
+	void saxpy_2d(float* pA, float* pX, float* pY, float* pZ, size_t M, size_t N)
 	{
-		for (size_t row = 0; row < height; row++)
+		const size_t a_width = M;
+		const size_t xyz_width = N;
+		for (size_t row = 0; row < M; row++)
 		{
-			for (size_t col = 0; col < width; col++)
+			for (size_t col = 0; col < N; col++)
 			{
 				// Multiply the row of pA by the column of pX to get the row, column of product.  
-				const size_t id = row*width + col;
-				for (size_t inner = 0; inner < width; inner++)
+				const size_t xyz_id = row*xyz_width + col;
+				pZ[xyz_id] += pY[xyz_id];
+				for (size_t inner = 0; inner < a_width; inner++)
 				{
-					const size_t innerRowId = row*width + inner;
-					const size_t innerColId = inner*width + col;
-					pZ[id] += pA[innerRowId] * pX[innerColId];
+					const size_t innerRowId = row*a_width + inner;
+					const size_t innerColId = inner*xyz_width + col;
+					pZ[xyz_id] += pA[innerRowId] * pX[innerColId];
 				}
-				// Add pY
-				pZ[id] += pY[id];
 			}
 		}
 	}

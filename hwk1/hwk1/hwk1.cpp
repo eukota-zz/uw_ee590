@@ -31,7 +31,6 @@
 //  2 - allow number of iteration count 
 // fix STL C++ to use 1D vector while calculating indices
 
-
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,8 +54,9 @@ using namespace std;
 
 namespace
 {
-int GLOBAL_M = 1024;
-int GLOBAL_N = 1024;
+int GLOBAL_ARRAY_WIDTH = 1024;
+int GLOBAL_ARRAY_HEIGHT = 1024;
+bool SKIP_VERIFICATION = false;
 }
 
 // Macros for OpenCL versions
@@ -667,7 +667,6 @@ cl_uint ExecuteKernel(ocl_args_d_t *ocl, size_t *globalWorkSize, size_t workSize
     return CL_SUCCESS;
 }
 
-
 // Forward declared for use by MapHostBufferToLocal()
 cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem);
 // Map Host Memory to Local Memory
@@ -709,75 +708,20 @@ cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem
 	return err;
 }
 
-bool ReadAndVerifySAXPY_1D(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_float inputA, cl_float *inputX, cl_float *inputY)
-{
-	cl_int err = CL_SUCCESS;
-	bool result = true;
-
-	// Enqueue a command to map the buffer object (ocl->dstMem) into the host address space and returns a pointer to it
-	// The map operation is blocking
-	cl_float *resultPtr = (cl_float *)clEnqueueMapBuffer(*commandQueue, *outputC, true, CL_MAP_READ, 0, sizeof(cl_uint) * width, 0, NULL, NULL, &err);
-
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clEnqueueMapBuffer returned %s\n", TranslateOpenCLError(err));
-		return false;
-	}
-
-	// Call clFinish to guarantee that output region is updated
-	err = clFinish(*commandQueue);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
-	}
-
-	// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
-	// Verify the results
-	unsigned int size = width;
-	for (unsigned int k = 0; k < size; ++k)
-	{
-		if (resultPtr[k] != inputA*inputX[k] + inputY[k])
-		{
-			LogError("Verification failed at %d: (%f * %f + %f = %f)\n", k, inputA, inputX[k], inputY[k], resultPtr[k]);
-			result = false;
-		}
-	}
-
-	// Unmapped the output buffer before releasing it
-	err = clEnqueueUnmapMemObject(*commandQueue, *outputC, resultPtr, 0, NULL, NULL);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
-	}
-
-	return result;
-}
-
-bool ReadAndVerifySAXPY_2D(cl_command_queue* commandQueue, cl_mem* outputC, cl_uint width, cl_float* inputA, cl_float* inpuX, cl_float* inputY)
-{
-	return false;
-}
-
 /////////// OpenCL ADD /////////// 
 int exCL_add()
 {
+	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
 	ocl_args_d_t ocl;
 	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
-
-	//initialize Open CL objects (context, queue, etc.)
 	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
 		return -1;
 
-	// Local Variables
-	cl_mem           srcA;              // hold first source buffer
-	cl_mem           srcB;              // hold second source buffer
-	cl_mem           dstMem;            // hold destination buffer
-	cl_uint arrayWidth = 1024;
-	cl_uint arrayHeight = 1024;
-
-	// allocate working buffers. 
-	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
+	// Create Local Variables and Allocate Memory
+	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
+	cl_uint arrayHeight = GLOBAL_ARRAY_HEIGHT;
 	cl_uint optimizedSize = ((sizeof(cl_float) * arrayWidth * arrayHeight - 1) / 64 + 1) * 64;
 	cl_float* inputA = (cl_float*)_aligned_malloc(optimizedSize, 4096);
 	cl_float* inputB = (cl_float*)_aligned_malloc(optimizedSize, 4096);
@@ -787,13 +731,14 @@ int exCL_add()
 		LogError("Error: _aligned_malloc failed to allocate buffers.\n");
 		return -1;
 	}
-
-	//random input
+	// Generate Random Input
 	tools::generateInputCL(inputA, arrayWidth, arrayHeight);
 	tools::generateInputCL(inputB, arrayWidth, arrayHeight);
 
-	// Create OpenCL buffers from host memory
-	// These buffers will be used later by the OpenCL kernel
+	// Create OpenCL buffers from host memory for use by Kernel
+	cl_mem           srcA;              // hold first source buffer
+	cl_mem           srcB;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
 	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))
 		return -1;
 	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcB, inputB, arrayWidth, arrayHeight))
@@ -801,15 +746,11 @@ int exCL_add()
 	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputC, arrayWidth, arrayHeight))
 		return -1;
 
-	// Create and build the OpenCL program
-	// Imports the named cl file
+	// Create and build the OpenCL program - imports named cl file.
 	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl")) 
 		return -1;
 
-	// Program consists of kernels.
-	// Each kernel can be called (enqueued) from the host part of OpenCL application.
-	// To call the kernel, you need to create it from existing program.
-	// Kernel named here ("Add" in this case) must exist in the previously loaded cl file
+	// Create Kernel - kernel name must match kernel name in cl file
 	ocl.kernel = clCreateKernel(ocl.program, "Add", &err);
 	if (CL_SUCCESS != err)
 	{
@@ -817,7 +758,7 @@ int exCL_add()
 		return -1;
 	}
 
-	// Passing arguments into OpenCL kernel.	
+	// Set OpenCL Kernel Arguments - Order Indicated by Final Argument
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
 		return -1;
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcB, 1))
@@ -825,7 +766,7 @@ int exCL_add()
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 2))
 		return -1;
 
-	// FINALLY! RUN!
+	// Enqueue Kernel (wrapped in profiler timing)
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
@@ -833,30 +774,33 @@ int exCL_add()
 		return -1;
 	profiler.Stop();
 	profiler.Log();
-
-	// Map Host Buffer to Local Data
-	cl_float* resultPtr = NULL;
-	if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, &resultPtr))
+	
+	if (!SKIP_VERIFICATION)
 	{
-		LogError("Error: clEnqueueMapBuffer failed.\n");
-		return -1;
-	}
-
-	// VERIFY DATA
-	// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
-	// Verify the results
-	unsigned int size = arrayWidth * arrayHeight;
-	for (unsigned int k = 0; k < size; ++k)
-	{
-		if (resultPtr[k] != inputA[k] + inputB[k])
+		// Map Host Buffer to Local Data
+		cl_float* resultPtr = NULL;
+		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, &resultPtr))
 		{
-			LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
+			LogError("Error: clEnqueueMapBuffer failed.\n");
+			return -1;
 		}
-	}
 
-	// Unmap Host Buffer from Local Data
-	if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
-		LogInfo("UnmapHostBufferFromLocal Failed.\n");
+		// VERIFY DATA
+		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+		// Verify the results
+		unsigned int size = arrayWidth * arrayHeight;
+		for (unsigned int k = 0; k < size; ++k)
+		{
+			if (resultPtr[k] != inputA[k] + inputB[k])
+			{
+				LogError("Verification failed at %d: (%f + %f = %f)\n", k, inputA[k], inputB[k], resultPtr[k]);
+			}
+		}
+
+		// Unmap Host Buffer from Local Data
+		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
+			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
 
 	_aligned_free(inputA);
 	_aligned_free(inputB);
@@ -872,50 +816,17 @@ int exCL_add()
 	return 0;
 }
 
-/////////// SEQUENTIAL ADD via C++ STL /////////// 
-int exSequential_addSTL()
-{
-	const size_t arrayWidth = 1024;
-	const size_t arrayHeight = 1024;
-	std::vector<std::vector<float> > matrixA;
-	std::vector<std::vector<float> > matrixB;
-	std::vector<std::vector<float> > matrixC;
-	tools::createEmptyMatrix(&matrixA, arrayWidth, arrayHeight);
-	tools::createEmptyMatrix(&matrixB, arrayWidth, arrayHeight);
-	tools::createEmptyMatrix(&matrixC, arrayWidth, arrayHeight);
-	tools::generateInputSTL(&matrixA);
-	tools::generateInputSTL(&matrixB);
-
-	ProfilerStruct profiler;
-	profiler.Start();
-	dmath::add(matrixA, matrixB, &matrixC);
-	profiler.Stop();
-	profiler.Log();
-
-	// verify 
-	for (size_t row = 0; row < arrayHeight; row++)
-	{
-		for (size_t col = 0; col < arrayWidth; col++)
-		{
-			if (matrixC[row][col] != matrixA[row][col] + matrixB[row][col])
-				LogError("Verification failed at (%d,%d): (%d + %d = %d)\n", row, col, matrixA[row][col], matrixB[row][col], matrixC[row][col]);
-		}
-	}
-
-
-	return 0;
-}
-
 /////////// SEQUENTIAL ADD via C /////////// 
 int exSequential_addC()
 {
-	const size_t arrayWidth = 1024;
-	const size_t arrayHeight = 1024;
-	
+	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
+	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
+
 	// allocate memory
-	float* matrixA = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	float* matrixB = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	float* matrixC = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
+	const size_t matrixSize = arrayWidth*arrayHeight;
+	float* matrixA = (float*)malloc((sizeof(float) * matrixSize));
+	float* matrixB = (float*)malloc((sizeof(float) * matrixSize));
+	float* matrixC = (float*)malloc((sizeof(float) * matrixSize));
 
 	// generate data
 	tools::generateInputC(matrixA, arrayWidth, arrayHeight);
@@ -928,6 +839,18 @@ int exSequential_addC()
 	profiler.Stop();
 	profiler.Log();
 
+	if (!SKIP_VERIFICATION)
+	{
+		// verify
+		for (size_t i = 0; i < matrixSize; i++)
+		{
+			const int row = i % arrayWidth;
+			const int col = (i - row) / arrayWidth;
+			if (matrixC[i] != matrixA[i] + matrixB[i])
+				LogError("Verification failed at (%d,%d): (%f + %f = %f)\n", row, col, matrixA[i], matrixB[i], matrixC[i]);
+		}
+	}
+
 	// free memory
 	free(matrixA);
 	free(matrixB);
@@ -935,24 +858,52 @@ int exSequential_addC()
 	return 0;
 }
 
+/////////// SEQUENTIAL ADD via C++ STL /////////// 
+int exSequential_addSTL()
+{
+	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
+	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
+	size_t matrixSize = arrayWidth*arrayHeight;
+	std::vector<float> matrixA(matrixSize, 0.0);
+	std::vector<float> matrixB(matrixSize, 0.0);
+	std::vector<float> matrixC(matrixSize, 0.0);
+	tools::generateInputSTL(&matrixA);
+	tools::generateInputSTL(&matrixB);
+
+	ProfilerStruct profiler;
+	profiler.Start();
+	dmath::add(matrixA, matrixB, &matrixC);
+	profiler.Stop();
+	profiler.Log();
+
+	if (!SKIP_VERIFICATION)
+	{
+		// Verify 
+		for (size_t i = 0; i < matrixSize; i++)
+		{
+			const int row = i % arrayWidth;
+			const int col = (i - row) / arrayWidth;
+			if (matrixC[i] != matrixA[i] + matrixB[i])
+				LogError("Verification failed at (%d,%d): (%d + %d = %d)\n", row, col, matrixA[i], matrixB[i], matrixC[i]);
+		}
+	}
+
+	return 0;
+}
+
 /////////// OpenCL SAXPY /////////// 
 int exCL_SAXPY_1D()
 {
+	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
 	ocl_args_d_t ocl;
 	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
 	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
 		return -1;
 
-	// Local Variables
-	cl_mem           scalarA;
-	cl_mem           srcX;              // hold first source buffer
-	cl_mem           srcY;              // hold second source buffer
-	cl_mem           dstMem;            // hold destination buffer
-
-	// allocate working buffers. 
-	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
-	cl_uint arrayWidth = 1024;
+	// Create Local Variables and Allocate Memory
+	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayWidth = (cl_uint)GLOBAL_ARRAY_WIDTH;
 	cl_float* inputA = (cl_float*)malloc(sizeof(cl_float));
 	cl_float* inputX = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth), 4096);
 	cl_float* inputY = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth), 4096);
@@ -962,14 +913,16 @@ int exCL_SAXPY_1D()
 		LogError("Error: malloc failed to allocate buffers.\n");
 		return -1;
 	}
-
-	//random input
-	*inputA = (cl_float)(rand() % 1000);
+	// Generate Random Input
+	*inputA = (cl_float)(rand() % 100);
 	tools::generateInputCL(inputX, arrayWidth, 1);
 	tools::generateInputCL(inputY, arrayWidth, 1);
 
-	// Create OpenCL buffers from host memory
-	// These buffers will be used later by the OpenCL kernel
+	// Create OpenCL buffers from host memory for use by Kernel
+	cl_mem           scalarA;
+	cl_mem           srcX;              // hold first source buffer
+	cl_mem           srcY;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
 	if (CL_SUCCESS != CreateReadBufferArg_Float(&ocl.context, &scalarA, inputA))						// A
 		return -1;
 	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayWidth, 1))		// X
@@ -979,9 +932,11 @@ int exCL_SAXPY_1D()
 	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayWidth, 1))	// output
 		return -1;
 
-	// Create and build the OpenCL program
+	// Create and build the OpenCL program - imports named cl file.
 	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl"))
 		return -1;
+
+	// Create Kernel - kernel name must match kernel name in cl file
 	ocl.kernel = clCreateKernel(ocl.program, "SAXPY_1D", &err);
 	if (CL_SUCCESS != err)
 	{
@@ -989,7 +944,7 @@ int exCL_SAXPY_1D()
 		return -1;
 	}
 
-	// Passing arguments into OpenCL kernel.
+	// Set OpenCL Kernel Arguments - Order Indicated by Final Argument
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &scalarA, 0))
 		return -1;
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcX, 1))
@@ -999,6 +954,7 @@ int exCL_SAXPY_1D()
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
 		return -1;
 
+	// Enqueue Kernel (wrapped in profiler timing)
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[1] = { arrayWidth };
@@ -1006,7 +962,33 @@ int exCL_SAXPY_1D()
 		return -1;
 	profiler.Stop();
 	profiler.Log();
-	ReadAndVerifySAXPY_1D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
+
+	if (!SKIP_VERIFICATION)
+	{
+		// Map Host Buffer to Local Data
+		cl_float* resultPtr = NULL;
+		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, 1, &resultPtr))
+		{
+			LogError("Error: clEnqueueMapBuffer failed.\n");
+			return -1;
+		}
+
+		// VERIFY DATA
+		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+		// Verify the results
+		const size_t size = (size_t)arrayWidth;
+		for (size_t i = 0; i < size; ++i)
+		{
+			if (resultPtr[i] != inputA[0] * inputX[i] + inputY[i])
+			{
+				LogError("Verification failed at %d: (%f * %f + %f = %f)\n", i, inputA[0], inputX[i], inputY[i], resultPtr[i]);
+			}
+		}
+
+		// Unmap Host Buffer from Local Data
+		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
+			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
 
 	free(inputA);
 	_aligned_free(inputX);
@@ -1025,21 +1007,59 @@ int exCL_SAXPY_1D()
 	return 0;
 }
 
+/////////// SEQUENTIAL SAXPY 1D via C /////////// 
+int exSequential_SAXPY_1D_C()
+{
+	// allocate memory
+	const size_t width = GLOBAL_ARRAY_WIDTH;
+	float Aval = (float)(rand() % 100);
+	float* matrixA = (float*)malloc((sizeof(float) * width));
+	float* matrixB = (float*)malloc((sizeof(float) * width));
+	float* matrixC = (float*)malloc((sizeof(float) * width));
+
+	// generate data
+	tools::generateInputC(matrixA, width, 1);
+	tools::generateInputC(matrixB, width, 1);
+
+	// Run
+	ProfilerStruct profiler;
+	profiler.Start();
+	dmath::saxpy_1d(Aval, matrixA, matrixB, matrixC, width);
+	profiler.Stop();
+	profiler.Log();
+
+	if (!SKIP_VERIFICATION)
+	{
+		// Verify
+		for (size_t i = 0; i < width; i++)
+		{
+			if (matrixC[i] != Aval*matrixA[i] + matrixB[i])
+				LogError("Verification failed at %d: (%f*%f + %f = %f)\n", i, Aval, matrixA[i], matrixB[i], matrixC[i]);
+		}
+	}
+
+	// free memory
+	free(matrixA);
+	free(matrixB);
+	free(matrixC);
+
+	return 0;
+}
+
 /////////// SEQUENTIAL SAXPY 1D via C++ STL /////////// 
 int exSequential_SAXPY_1D_STL()
 {
-	const size_t width = 1024;
-	std::vector<float> matrixA(width);
-	std::vector<float> matrixB(width);
-	std::vector<float> matrixC(width);
+	const size_t width = GLOBAL_ARRAY_WIDTH;
+	std::vector<float> matrixA(width, 0.0);
+	std::vector<float> matrixB(width, 0.0);
+	std::vector<float> matrixC(width, 0.0);
 	
 	// generate random data
-	srand(12345);
-	float Aval = (float)(rand() % 1000);
+	float Aval = (float)(rand() % 100);
 	for (size_t i = 0; i < width; i++)
 	{
-		matrixA[i] = (float)(rand() % 1000);
-		matrixB[i] = (float)(rand() % 1000);
+		matrixA[i] = (float)(rand() % 100);
+		matrixB[i] = (float)(rand() % 100);
 	}
 
 	// Run
@@ -1049,56 +1069,99 @@ int exSequential_SAXPY_1D_STL()
 	profiler.Stop();
 	profiler.Log();
 
+	if (!SKIP_VERIFICATION)
+	{
+		// verify
+		for (size_t i = 0; i < width; i++)
+		{
+			if (matrixC[i] != Aval*matrixA[i] + matrixB[i])
+				LogError("Verification failed at (d: (%f*%f + %f = %f)\n", i, Aval, matrixA[i], matrixB[i], matrixC[i]);
+		}
+	}
+
+	// no need to clear memory - C++ vectors will delete on going out of scope
 	return 0;
 }
 
-/////////// OpenCL SAXPY /////////// 
+/////////// OpenCL SAXPY 2D /////////// 
 int exCL_SAXPY_2D()
 {
+	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
 	ocl_args_d_t ocl;
 	cl_device_type deviceType = CL_DEVICE_TYPE_GPU;
-	cl_mem           srcA;				// hold scalar buffer
-	cl_mem           srcX;              // hold first source buffer
-	cl_mem           srcY;              // hold second source buffer
-	cl_mem           dstMem;            // hold destination buffer
-
 	if (CL_SUCCESS != SetupOpenCL(&ocl, deviceType))
 		return -1;
 
-	// allocate working buffers. 
-	// the buffer should be aligned with 4K page and size should fit 64-byte cached line
-	cl_uint arrayWidth = 1024;
-	cl_uint arrayHeight = 1024;
-	cl_float* inputA = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
-	cl_float* inputX = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
-	cl_float* inputY = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
-	cl_float* outputZ = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayWidth * arrayHeight), 4096);
+	// Create Local Variables and Allocate Memory
+	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayValM = GLOBAL_ARRAY_WIDTH;
+	cl_uint arrayValN = GLOBAL_ARRAY_HEIGHT;
+
+
+#ifdef TEST_STATIC_VALUES
+	arrayValM = 3;
+	arrayValN = 2;
+#endif
+	cl_float* inputA = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayValM * arrayValM), 4096);
+	cl_float* inputX = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayValM * arrayValN), 4096);
+	cl_float* inputY = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayValM * arrayValN), 4096);
+	cl_float* outputZ = (cl_float*)_aligned_malloc((sizeof(cl_float) * arrayValM * arrayValN), 4096);
 	if (NULL == inputA || NULL == inputX || NULL == inputY || NULL == outputZ)
 	{
 		LogError("Error: malloc failed to allocate buffers.\n");
 		return -1;
 	}
 
-	//random input
-	tools::generateInputCL(inputA, arrayWidth, arrayHeight);
-	tools::generateInputCL(inputX, arrayWidth, arrayHeight);
-	tools::generateInputCL(inputY, arrayWidth, arrayHeight);
+// Use this if you get super-stuck and need to figure something out...
+#ifdef TEST_STATIC_VALUES
+	inputA[0] = 1;
+	inputA[1] = 2;
+	inputA[2] = 3;
+	inputA[3] = 4;
+	inputA[4] = 5;
+	inputA[5] = 6;
+	inputA[6] = 7;
+	inputA[7] = 8;
+	inputA[8] = 9;
+	inputX[0] = 1;
+	inputX[1] = 1;
+	inputX[2] = 1;
+	inputX[3] = 1;
+	inputX[4] = 1;
+	inputX[5] = 1;
+	inputY[0] = 1;
+	inputY[1] = 1;
+	inputY[2] = 1;
+	inputY[3] = 1;
+	inputY[4] = 1;
+	inputY[5] = 1;
+#else
+	// Generate Random Input
+	tools::generateInputCL(inputA, arrayValM, arrayValM);
+	tools::generateInputCL(inputX, arrayValM, arrayValN);
+	tools::generateInputCL(inputY, arrayValM, arrayValN);
+#endif
 
-	// Create OpenCL buffers from host memory
-	// These buffers will be used later by the OpenCL kernel
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))		// A
+	// Create OpenCL buffers from host memory for use by Kernel
+	cl_mem           srcA;				// hold scalar buffer
+	cl_mem           srcX;              // hold first source buffer
+	cl_mem           srcY;              // hold second source buffer
+	cl_mem           dstMem;            // hold destination buffer
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayValM, arrayValM))		// A
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayWidth, arrayHeight))		// X
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayValM, arrayValN))		// X
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayWidth, arrayHeight))		// Y
+	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayValM, arrayValN))		// Y
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayWidth, arrayHeight))	// output
+	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayValM, arrayValN))	// output
 		return -1;
 
-	// Create and build the OpenCL program
+	// Create and build the OpenCL program - imports named cl file.
 	if (CL_SUCCESS != CreateAndBuildProgram(&ocl, "arithmetic.cl"))
 		return -1;
+
+	// Create Kernel - kernel name must match kernel name in cl file
 	ocl.kernel = clCreateKernel(ocl.program, "SAXPY_2D", &err);
 	if (CL_SUCCESS != err)
 	{
@@ -1106,7 +1169,7 @@ int exCL_SAXPY_2D()
 		return -1;
 	}
 
-	// Passing arguments into OpenCL kernel.
+	// Set OpenCL Kernel Arguments - Order Indicated by Final Argument
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
 		return -1;
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcX, 1))
@@ -1116,14 +1179,54 @@ int exCL_SAXPY_2D()
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
 		return -1;
 
+	// Enqueue Kernel (wrapped in profiler timing)
 	ProfilerStruct profiler;
 	profiler.Start();
-	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
+	size_t globalWorkSize[2] = { arrayValM, arrayValN };
 	if (CL_SUCCESS != ExecuteKernel(&ocl, globalWorkSize, 2))
 		return -1;
 	profiler.Stop();
 	profiler.Log();
-	//ReadAndVerifySAXPY_2D(&ocl.commandQueue, &dstMem, arrayWidth, *inputA, inputX, inputY);
+
+	if (!SKIP_VERIFICATION)
+	{
+		// Map Host Buffer to Local Data
+		cl_float* resultPtr = NULL;
+		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayValM, arrayValN, &resultPtr))
+		{
+			LogError("Error: clEnqueueMapBuffer failed.\n");
+			return -1;
+		}
+
+		// VERIFY DATA
+		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+		// Verify the results
+		const size_t a_width = arrayValM;
+		const size_t xyz_width = arrayValN;
+		for (size_t row = 0; row < (size_t)arrayValM; row++)
+		{
+			for (size_t col = 0; col < (size_t)arrayValN; col++)
+			{
+				// Multiply the row of pA by the column of pX to get the row, column of product.  
+				const size_t xyz_id = row*xyz_width + col;
+
+				float singleEntry = inputY[xyz_id];
+				for (size_t inner = 0; inner < a_width; inner++)
+				{
+					const size_t innerRowId = row*a_width + inner;
+					const size_t innerColId = inner*xyz_width + col;
+					singleEntry += inputA[innerRowId] * inputX[innerColId];
+				}
+				const size_t resultsId = row*(arrayValN)+col;
+				if (singleEntry != resultPtr[resultsId])
+					LogError("Verification failed at %d: expected %f; actual %f\n", resultsId, singleEntry, resultPtr[resultsId]);
+			}
+		}
+
+		// Unmap Host Buffer from Local Data
+		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
+			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
 
 	_aligned_free(inputA);
 	_aligned_free(inputX);
@@ -1142,56 +1245,25 @@ int exCL_SAXPY_2D()
 	return 0;
 }
 
-/////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
-int exSequential_SAXPY_2D_STL()
-{
-	const size_t arrayWidth = 1024;
-	const size_t arrayHeight = 1024;
-	std::vector<std::vector<float> > matrixA;
-	std::vector<std::vector<float> > matrixB;
-	std::vector<std::vector<float> > matrixC;
-	std::vector<std::vector<float> > matrixD;
-	
-	// allocate space
-	tools::createEmptyMatrix(&matrixA, arrayWidth, arrayHeight);
-	tools::createEmptyMatrix(&matrixB, arrayWidth, arrayHeight);
-	tools::createEmptyMatrix(&matrixC, arrayWidth, arrayHeight);
-	tools::createEmptyMatrix(&matrixD, arrayWidth, arrayHeight);
-
-	// generate data
-	tools::generateInputSTL(&matrixA);
-	tools::generateInputSTL(&matrixB);
-	tools::generateInputSTL(&matrixC);
-
-	// add
-	ProfilerStruct profiler;
-	profiler.Start();
-	dmath::saxpy_2d(matrixA, matrixB, matrixC, &matrixD);
-	profiler.Stop();
-	profiler.Log();
-
-	return 0;
-}
-
 /////////// SEQUENTIAL SAXPY 2D via C /////////// 
 int exSequential_SAXPY_2D_C()
 {
-	const size_t arrayWidth = 1024;
-	const size_t arrayHeight = 1024;
-	float* matrixA = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	float* matrixB = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	float* matrixC = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	float* matrixD = (float*)malloc((sizeof(float) * arrayWidth * arrayHeight));
-	
+	const size_t arrayValM = GLOBAL_ARRAY_WIDTH;
+	const size_t arrayValN = GLOBAL_ARRAY_HEIGHT;
+	float* matrixA = (float*)malloc((sizeof(float) * arrayValM * arrayValM));
+	float* matrixB = (float*)malloc((sizeof(float) * arrayValM * arrayValN));
+	float* matrixC = (float*)malloc((sizeof(float) * arrayValM * arrayValN));
+	float* matrixD = (float*)malloc((sizeof(float) * arrayValM * arrayValN));
+
 	// generate data
-	tools::generateInputC(matrixA, arrayWidth, arrayHeight);
-	tools::generateInputC(matrixB, arrayWidth, arrayHeight);
-	tools::generateInputC(matrixC, arrayWidth, arrayHeight);
+	tools::generateInputC(matrixA, arrayValM, arrayValM);
+	tools::generateInputC(matrixB, arrayValM, arrayValN);
+	tools::generateInputC(matrixC, arrayValM, arrayValN);
 
 	// add
 	ProfilerStruct profiler;
 	profiler.Start();
-	dmath::saxpy_2d(matrixA, matrixB, matrixC, matrixD, arrayWidth, arrayHeight);
+	dmath::saxpy_2d(matrixA, matrixB, matrixC, matrixD, arrayValM, arrayValN);
 	profiler.Stop();
 	profiler.Log();
 
@@ -1203,6 +1275,32 @@ int exSequential_SAXPY_2D_C()
 	return 0;
 }
 
+/////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
+int exSequential_SAXPY_2D_STL()
+{
+	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
+	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
+	std::vector<std::vector<float> > matrixA;
+	std::vector<std::vector<float> > matrixB;
+	std::vector<std::vector<float> > matrixC;
+	std::vector<std::vector<float> > matrixD;
+	
+	// generate data
+//	tools::generateInputSTL(&matrixA);
+//	tools::generateInputSTL(&matrixB);
+//	tools::generateInputSTL(&matrixC);
+
+	// add
+	ProfilerStruct profiler;
+	profiler.Start();
+	dmath::saxpy_2d(matrixA, matrixB, matrixC, &matrixD);
+	profiler.Stop();
+	profiler.Log();
+
+	return 0;
+}
+
+/////////// Input Gathering for M and N ////////////
 int GetInput(const std::string& prompt)
 {
 	std::cout << prompt;
@@ -1210,20 +1308,27 @@ int GetInput(const std::string& prompt)
 	std::cin >> v;
 	return v;
 }
-
 int SetHwk1ValueM()
 {
-	GLOBAL_M = GetInput("Enter value for M:");
+	GLOBAL_ARRAY_WIDTH = GetInput("Enter value for M:");
 	return 0;
 }
-
 int SetHwk1ValueN()
 {
-	GLOBAL_N = GetInput("Enter value for N:");
+	GLOBAL_ARRAY_HEIGHT = GetInput("Enter value for N:");
+	return 0;
+}
+int SkipVerify()
+{
+	cout << "Enter 1 to Skip Verification in functions. Enter 0 to Do Verification: ";
+	unsigned int i = (unsigned int)SKIP_VERIFICATION;
+	cin >> i;
+	SKIP_VERIFICATION = i;
 	return 0;
 }
 
-
+//@TODO map hwk1 and hwk2 into single class group
+/////////// HOMEWORK 1
 class HWK1Class : public GroupManager
 {
 public:
@@ -1232,28 +1337,28 @@ public:
 		groups_ = GroupFactory();
 	}
 	virtual std::string ProblemGroupName() { return "Homework 1"; }
-	virtual std::string ProblemName() { return "Test"; }
+	virtual std::string ProblemName() { return ""; }
 	std::map<int, ProblemGroup*> GroupFactory();
 };
-
-// FUNCTION AND INPUT FACTORY
 std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 {
 	std::map<int, ProblemGroup*> pgs;
 	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
-	InputControl->problems_[1] = new Problem(&SetHwk1ValueM, "Set M Value");
-	InputControl->problems_[2] = new Problem(&SetHwk1ValueN, "Set N Value");
+	InputControl->problems_[1] = new Problem(&SetHwk1ValueM, "Set M Value (defaults to 1024)");
+	InputControl->problems_[2] = new Problem(&SetHwk1ValueN, "Set N Value (defaults to 1024)");
+	InputControl->problems_[3] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
 	pgs[InputControl->GroupNum()] = InputControl;
 
 	ProblemGroup* Homework1 = new ProblemGroup(1, "Homework 1");
-	Homework1->problems_[1] = new Problem(&exCL_add, "Add Two Vectors Kernel");
-	Homework1->problems_[2] = new Problem(&exSequential_addSTL, "Add Two Vectors Sequentially using C++ STL");
-	Homework1->problems_[3] = new Problem(&exSequential_addC, "Add Two Vectors Sequentially using C");
-	Homework1->problems_[4] = new Problem(&exCL_SAXPY_1D, "SAXPY 1D Kernel");
-	Homework1->problems_[5] = new Problem(&exSequential_SAXPY_1D_STL, "SAXPY 1D Sequentially using C++ STL");
-	Homework1->problems_[6] = new Problem(&exCL_SAXPY_2D, "SAXPY 2D Kernel");
-	Homework1->problems_[7] = new Problem(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL");
+	Homework1->problems_[1] = new Problem(&exCL_add, "Add Two Vectors: OpenCL");
+	Homework1->problems_[2] = new Problem(&exSequential_addC, "Add Two Vectors: Sequentiall C");
+	Homework1->problems_[3] = new Problem(&exSequential_addSTL, "Add Two Vectors: Sequential C++ STL");
+	Homework1->problems_[4] = new Problem(&exCL_SAXPY_1D, "SAXPY 1D: OpenCL");
+	Homework1->problems_[5] = new Problem(&exSequential_SAXPY_1D_C, "SAXPY 1D: Sequential C");
+	Homework1->problems_[6] = new Problem(&exSequential_SAXPY_1D_STL, "SAXPY 1D: Sequential C++ STL");
+	Homework1->problems_[7] = new Problem(&exCL_SAXPY_2D, "SAXPY 2D Kernel");
 	Homework1->problems_[8] = new Problem(&exSequential_SAXPY_2D_C, "SAXPY 2D Sequentially using C");
+	Homework1->problems_[9] = new Problem(&exSequential_SAXPY_2D_STL, "SAXPY 2D Sequentially using C++ STL");
 	pgs[Homework1->GroupNum()] = Homework1;
 
 	ProblemGroup* Homework2 = new ProblemGroup(2, "Homework 2");
@@ -1261,17 +1366,38 @@ std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 	return pgs;
 }
 
-
+/////////// HOMEWORK 2
+class HWK2Class : public GroupManager
+{
+public:
+	HWK2Class() : GroupManager("Homework 2")
+	{
+		groups_ = GroupFactory2();
+	}
+	virtual std::string ProblemGroupName() { return "Homework 2"; }
+	virtual std::string ProblemName() { return ""; }
+	std::map<int, ProblemGroup*> GroupFactory2();
+};
+std::map<int, ProblemGroup*> HWK2Class::GroupFactory2()
+{
+	std::map<int, ProblemGroup*> pgs;
+	ProblemGroup* Homework2 = new ProblemGroup(1, "Homework 2");
+	pgs[Homework2->GroupNum()] = Homework2;
+	return pgs;
+}
 
 void PrintInstructions()
 {
 	cout << endl << "MAIN MENU:" << endl
 		<< "// 1 --> Homework 1 //" << endl
+		<< "// 2 --> Homework 2 //" << endl
 		<< "// Q --> Quit       //" << endl
 		<< endl;
 }
+
 int _tmain(int argc, TCHAR* argv[])
 {
+	srand(12345);
 	bool runTests = false;
 	string input;
 	do
@@ -1283,6 +1409,11 @@ int _tmain(int argc, TCHAR* argv[])
 		{
 			HWK1Class hwk1c;
 			res = hwk1c.Run();
+		}
+		if (input == "2")
+		{
+			HWK2Class hwk2c;
+			res = hwk2c.Run();
 		}
 		if (input == "Q" || input == "q")
 		{

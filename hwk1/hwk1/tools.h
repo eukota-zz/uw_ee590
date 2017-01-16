@@ -29,9 +29,7 @@ namespace tools
 	
 	void generateInputC(float* inputArray, size_t arrayWidth, size_t arrayHeight);
 	
-	void createEmptyMatrix(std::vector<std::vector<float> >* inputMatrix, size_t arrayWidth, size_t arrayHeight);
-
-	void generateInputSTL(std::vector<std::vector<float> >* inputMatrix);
+	void generateInputSTL(std::vector<float>* inputMatrix);
 
 	bool verifyEqual(const std::vector<std::vector<float> >& pA, const std::vector<std::vector<float> >& pB);
 
