@@ -52,6 +52,30 @@ namespace tools
 		}
 	}
 
+	void generateInputFloat16(cl_float16* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
+	{
+		size_t array_size = arrayWidth * arrayHeight;
+		for (size_t i = 0; i < array_size; ++i)
+		{
+			inputArray[i].s0 = randFloat();
+			inputArray[i].s1 = randFloat();
+			inputArray[i].s2 = randFloat();
+			inputArray[i].s3 = randFloat();
+			inputArray[i].s4 = randFloat();
+			inputArray[i].s5 = randFloat();
+			inputArray[i].s6 = randFloat();
+			inputArray[i].s7 = randFloat();
+			inputArray[i].s8 = randFloat();
+			inputArray[i].s9 = randFloat();
+			inputArray[i].sA = randFloat();
+			inputArray[i].sB = randFloat();
+			inputArray[i].sC = randFloat();
+			inputArray[i].sD = randFloat();
+			inputArray[i].sE = randFloat();
+			inputArray[i].sF = randFloat();
+		}
+	}
+
 	void generateInputCL(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
 	{
 		// random initialization of input

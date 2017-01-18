@@ -431,6 +431,19 @@ int CreateReadBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4*
 	return 0;
 }
 
+int CreateReadBufferArg_Float16Array(cl_context *context, cl_mem* mem, cl_float16* input, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float16)*arrayWidth*arrayHeight, input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
+
 int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight)
 {
 	cl_int err = CL_SUCCESS;
@@ -491,9 +504,42 @@ cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl
 	return err;
 }
 
+cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_uint width, cl_uint height, cl_float16** localMem)
+{
+	cl_int err = CL_SUCCESS;
+
+	const bool blockingMap = true;
+	*localMem = (cl_float16 *)clEnqueueMapBuffer(*commandQueue, *hostMem, blockingMap, CL_MAP_READ, 0 /*buffer offset*/, sizeof(cl_uint) * width * height, 0, NULL, NULL, &err);
+
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clEnqueueMapBuffer returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+
+	// Call clFinish to guarantee that output region is updated
+	err = clFinish(*commandQueue);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clFinish returned %s\n", TranslateOpenCLError(err));
+		UnmapHostBufferFromLocal(commandQueue, hostMem, *localMem); // attempt to unmap to clear 
+	}
+	return err;
+}
+
 // Unmap Host Memory from Local Memory
 // TO BE CALLED AFTER MapBuffer()
 cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem)
+{
+	// Unmapped the output buffer before releasing it
+	cl_int err = clEnqueueUnmapMemObject(*commandQueue, *hostMem, localMem, 0, NULL, NULL);
+	if (CL_SUCCESS != err)
+		LogError("Error: clEnqueueUnmapMemObject returned %s\n", TranslateOpenCLError(err));
+
+	return err;
+}
+
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float16* localMem)
 {
 	// Unmapped the output buffer before releasing it
 	cl_int err = clEnqueueUnmapMemObject(*commandQueue, *hostMem, localMem, 0, NULL, NULL);

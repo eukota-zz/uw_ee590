@@ -42,8 +42,12 @@ struct ocl_args_d_t
 
 int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input);
 int CreateReadBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4* input, cl_uint arrayWidth, cl_uint arrayHeight);
+int CreateReadBufferArg_Float16Array(cl_context *context, cl_mem* mem, cl_float16* input, cl_uint arrayWidth, cl_uint arrayHeight);
 int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight);
 int CreateWriteBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* output, cl_uint arrayWidth, cl_uint arrayHeight);
 cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum);
+
 cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_uint width, cl_uint height, cl_float** localMem);
+cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_uint width, cl_uint height, cl_float16** localMem);
 cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem);
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float16* localMem);

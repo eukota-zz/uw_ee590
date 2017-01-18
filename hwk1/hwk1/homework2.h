@@ -12,11 +12,17 @@ public:
 
 };
 
+int exCL_DotProduct_Helper(ResultsStruct* results, const std::string& KernelName);
 int exCL_DotProduct_Manual(ResultsStruct* results);
 int exCL_DotProduct(ResultsStruct* results);
+int exSequential_DotProduct(ResultsStruct* results);
+
+int exCL_MAD_FMA_Helper(ResultsStruct* results, const std::string& KernelName);
 int exCL_MAD(ResultsStruct* results);
 int exCL_FMA(ResultsStruct* results);
+int exCL_FMA_Manual(ResultsStruct* results);
 int exSequential_MAD(ResultsStruct* results);
+
 int exCL_CrossProduct(ResultsStruct* results);
 int exCL_CrossProduct_Reverse(ResultsStruct* results);
 int exCL_FastLength(ResultsStruct* results);

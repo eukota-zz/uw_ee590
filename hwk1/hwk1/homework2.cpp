@@ -34,20 +34,18 @@ std::map<int, ProblemGroup*> HWK2Class::GroupFactory()
 
 	ProblemGroup* Homework2 = new ProblemGroup(1, "Homework 2");
 	int num = 0;
-	Homework2->problems_[++num] = new Problem(&exCL_DotProduct_Manual, "Dot Product Manual: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_DotProduct, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_MAD, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_FMA, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exSequential_MAD, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_CrossProduct, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_CrossProduct_Reverse, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_FastLength, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_NativeSquareRoot, "Dot Product: OpenCL");
-	Homework2->problems_[++num] = new Problem(&exCL_SquareRoot, "Dot Product: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exCL_DotProduct_Manual , "Dot Product Manual: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exCL_DotProduct        , "Dot Product: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exSequential_DotProduct, "Dot Product: Sequential");
+	Homework2->problems_[++num] = new Problem(&exCL_MAD               , "MAD: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exCL_FMA               , "FMA: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exCL_FMA_Manual        , "FMA_Manual: OpenCL");
+	Homework2->problems_[++num] = new Problem(&exSequential_MAD       , "MAD: Sequential");
 	pgs[Homework2->GroupNum()] = Homework2;
 	return pgs;
 }
 
+////////////////// DOT PRODUCT /////////////////
 // Since DotProduct and DotProduct_Manual use identical input types, I use the exact same function call and just vary the KernelName
 int exCL_DotProduct_Helper(ResultsStruct* results, const std::string& KernelName)
 {
@@ -171,19 +169,239 @@ int exCL_DotProduct(ResultsStruct* results)
 	return exCL_DotProduct_Helper(results, "DotProduct");
 }
 
+int exSequential_DotProduct(ResultsStruct* results)
+{
+	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
+
+	// allocate memory
+	cl_float4* vectorA = (cl_float4*)malloc((sizeof(cl_float4) * arrayWidth));
+	cl_float4* vectorB = (cl_float4*)malloc((sizeof(cl_float4) * arrayWidth));
+	cl_float* outputC = (cl_float*)malloc((sizeof(cl_float) * arrayWidth));
+
+	// generate data
+	tools::generateInputFloat4(vectorA, arrayWidth, 1);
+	tools::generateInputFloat4(vectorB, arrayWidth, 1);
+
+	// add
+	ProfilerStruct profiler;
+	profiler.Start();
+	bool failed = false;
+	for (unsigned int k = 0; k < arrayWidth; ++k)
+		outputC[k] = vectorA[k].x*vectorB[k].x + vectorA[k].y*vectorB[k].y + vectorA[k].z*vectorB[k].z + vectorA[k].w*vectorB[k].w;
+	profiler.Stop();
+	float runTime = profiler.Log();
+	
+	// free memory
+	free(vectorA);
+	free(vectorB);
+	free(outputC);
+
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
+}
+
+///////////////// MAD and FMA ///////////////////
+// Since MAD, FMA, and FMA Manual all have the same input types, I use a helper function to execute them while varying the KernelName
+int exCL_MAD_FMA_Helper(ResultsStruct* results, const std::string& KernelName)
+{
+	cl_int err;
+	ocl_args_d_t ocl(CL_DEVICE_TYPE_GPU);
+
+	// Create Local Variables and Allocate Memory
+	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
+	cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
+	cl_uint optimizedSizeFloat16 = ((sizeof(cl_float16) * arrayWidth - 1) / 64 + 1) * 64;
+	cl_float16* inputA = (cl_float16*)_aligned_malloc(optimizedSizeFloat16, 4096);
+	cl_float16* inputB = (cl_float16*)_aligned_malloc(optimizedSizeFloat16, 4096);
+	cl_float16* inputC = (cl_float16*)_aligned_malloc(optimizedSizeFloat16, 4096);
+	cl_float16* outputD = (cl_float16*)_aligned_malloc(optimizedSizeFloat16, 4096);
+	if (NULL == inputA || NULL == inputB || NULL == inputC || NULL == outputD)
+	{
+		LogError("Error: _aligned_malloc failed to allocate buffers.\n");
+		return -1;
+	}
+	// Generate Random Input
+	tools::generateInputFloat16(inputA, arrayWidth, 1);
+	tools::generateInputFloat16(inputB, arrayWidth, 1);
+	tools::generateInputFloat16(inputC, arrayWidth, 1);
+
+	// Create OpenCL buffers from host memory for use by Kernel
+	cl_mem           srcA;              // hold first source buffer
+	cl_mem           srcB;              // hold second source buffer
+	cl_mem           srcC;              // hold third source buffer
+	cl_mem           dstMem;            // hold destination buffer
+	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcB, inputB, arrayWidth, 1))
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcC, inputC, arrayWidth, 1))
+		return -1;
+	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &dstMem, outputD, arrayWidth, 1))
+		return -1;
+
+	// Create and build the OpenCL program - imports named cl file.
+	if (CL_SUCCESS != ocl.CreateAndBuildProgram(FILENAME))
+		return -1;
+
+	// Create Kernel - kernel name must match kernel name in cl file
+	ocl.kernel = clCreateKernel(ocl.program, KernelName.c_str(), &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
+		return -1;
+	}
+
+	// Set OpenCL Kernel Arguments - Order Indicated by Final Argument
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcB, 1))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcC, 2))
+		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 3))
+		return -1;
+
+	// Enqueue Kernel (wrapped in profiler timing)
+	ProfilerStruct profiler;
+	profiler.Start();
+	size_t globalWorkSize[1] = { arrayWidth };
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1))
+		return -1;
+	profiler.Stop();
+	float runTime = profiler.Log();
+
+	if (!SKIP_VERIFICATION)
+	{
+		// Map Host Buffer to Local Data
+		cl_float16* resultPtr = NULL;
+		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, 1, &resultPtr))
+		{
+			LogError("Error: clEnqueueMapBuffer failed.\n");
+			return -1;
+		}
+
+		// VERIFY DATA
+		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
+		// Verify the results
+		unsigned int size = arrayWidth;
+		bool failed = false;
+		for (unsigned int k = 0; k < size; ++k)
+		{
+			if (resultPtr[k].s0 != inputA[k].s0*inputB[k].s0 + inputC[k].s0
+				|| resultPtr[k].s1 != inputA[k].s1*inputB[k].s1 + inputC[k].s1
+				|| resultPtr[k].s2 != inputA[k].s2*inputB[k].s2 + inputC[k].s2
+				|| resultPtr[k].s3 != inputA[k].s3*inputB[k].s3 + inputC[k].s3
+				|| resultPtr[k].s4 != inputA[k].s4*inputB[k].s4 + inputC[k].s4
+				|| resultPtr[k].s5 != inputA[k].s5*inputB[k].s5 + inputC[k].s5
+				|| resultPtr[k].s6 != inputA[k].s6*inputB[k].s6 + inputC[k].s6
+				|| resultPtr[k].s7 != inputA[k].s7*inputB[k].s7 + inputC[k].s7
+				|| resultPtr[k].s8 != inputA[k].s8*inputB[k].s8 + inputC[k].s8
+				|| resultPtr[k].s9 != inputA[k].s9*inputB[k].s9 + inputC[k].s9
+				|| resultPtr[k].sa != inputA[k].sa*inputB[k].sa + inputC[k].sa
+				|| resultPtr[k].sb != inputA[k].sb*inputB[k].sb + inputC[k].sb
+				|| resultPtr[k].sc != inputA[k].sc*inputB[k].sc + inputC[k].sc
+				|| resultPtr[k].sd != inputA[k].sd*inputB[k].sd + inputC[k].sd
+				|| resultPtr[k].se != inputA[k].se*inputB[k].se + inputC[k].se
+				|| resultPtr[k].sf != inputA[k].sf*inputB[k].sf + inputC[k].sf)
+			{
+				LogError("Verification failed at %d.\n", k);
+				failed = true;
+			}
+		}
+		if (!failed)
+			LogInfo("Verification passed.\n");
+
+		// Unmap Host Buffer from Local Data
+		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
+			LogInfo("UnmapHostBufferFromLocal Failed.\n");
+	}
+
+	_aligned_free(inputA);
+	_aligned_free(inputB);
+	_aligned_free(inputC);
+	_aligned_free(outputD);
+
+	if (CL_SUCCESS != clReleaseMemObject(srcA))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcB))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(srcC))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+	if (CL_SUCCESS != clReleaseMemObject(dstMem))
+		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
+
+	results->WindowsRunTime = runTime;
+	results->HasWindowsRunTime = true;
+	results->OpenCLRunTime = ocl.RunTimeMS();
+	results->HasOpenCLRunTime = true;
+	return 0;
+}
 
 int exCL_MAD(ResultsStruct* results)
 {
-	return 0;
+	return exCL_MAD_FMA_Helper(results, "MAD");
 }
 
 int exCL_FMA(ResultsStruct* results)
 {
-	return 0;
+	return exCL_MAD_FMA_Helper(results, "FMA");
+}
+
+int exCL_FMA_Manual(ResultsStruct* results)
+{
+	return exCL_MAD_FMA_Helper(results, "FMA_Manual");
 }
 
 int exSequential_MAD(ResultsStruct* results)
 {
+	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
+
+	// allocate memory
+	cl_float16* vectorA = (cl_float16*)malloc((sizeof(cl_float16) * arrayWidth));
+	cl_float16* vectorB = (cl_float16*)malloc((sizeof(cl_float16) * arrayWidth));
+	cl_float16* vectorC = (cl_float16*)malloc((sizeof(cl_float16) * arrayWidth));
+	cl_float16* vectorD = (cl_float16*)malloc((sizeof(cl_float16) * arrayWidth));
+
+	// generate data
+	tools::generateInputFloat16(vectorA, arrayWidth, 1);
+	tools::generateInputFloat16(vectorB, arrayWidth, 1);
+	tools::generateInputFloat16(vectorC, arrayWidth, 1);
+
+	// add
+	ProfilerStruct profiler;
+	profiler.Start();
+	bool failed = false;
+	for (unsigned int idx = 0; idx < arrayWidth; ++idx)
+	{
+		vectorD[idx].s0 = vectorA[idx].s0*vectorB[idx].s0 + vectorC[idx].s0;
+		vectorD[idx].s1 = vectorA[idx].s1*vectorB[idx].s1 + vectorC[idx].s1;
+		vectorD[idx].s2 = vectorA[idx].s2*vectorB[idx].s2 + vectorC[idx].s2;
+		vectorD[idx].s3 = vectorA[idx].s3*vectorB[idx].s3 + vectorC[idx].s3;
+		vectorD[idx].s4 = vectorA[idx].s4*vectorB[idx].s4 + vectorC[idx].s4;
+		vectorD[idx].s5 = vectorA[idx].s5*vectorB[idx].s5 + vectorC[idx].s5;
+		vectorD[idx].s6 = vectorA[idx].s6*vectorB[idx].s6 + vectorC[idx].s6;
+		vectorD[idx].s7 = vectorA[idx].s7*vectorB[idx].s7 + vectorC[idx].s7;
+		vectorD[idx].s8 = vectorA[idx].s8*vectorB[idx].s8 + vectorC[idx].s8;
+		vectorD[idx].s9 = vectorA[idx].s9*vectorB[idx].s9 + vectorC[idx].s9;
+		vectorD[idx].sa = vectorA[idx].sa*vectorB[idx].sa + vectorC[idx].sa;
+		vectorD[idx].sb = vectorA[idx].sb*vectorB[idx].sb + vectorC[idx].sb;
+		vectorD[idx].sc = vectorA[idx].sc*vectorB[idx].sc + vectorC[idx].sc;
+		vectorD[idx].sd = vectorA[idx].sd*vectorB[idx].sd + vectorC[idx].sd;
+		vectorD[idx].se = vectorA[idx].se*vectorB[idx].se + vectorC[idx].se;
+		vectorD[idx].sf = vectorA[idx].sf*vectorB[idx].sf + vectorC[idx].sf;
+	}
+	profiler.Stop();
+	float runTime = profiler.Log();
+
+	// free memory
+	free(vectorA);
+	free(vectorB);
+	free(vectorC);
+	free(vectorD);
+
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
 	return 0;
 }
 
