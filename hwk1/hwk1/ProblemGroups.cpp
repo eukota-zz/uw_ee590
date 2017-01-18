@@ -14,7 +14,7 @@ float ProblemGroup::operator()(int problem)
 		return 0.0;
 	}
 	float timeProfile = 0.0;
-	const size_t runCount = dmath::RUN_COUNT;
+	const size_t runCount = (GroupNum() == 0 ? 1 : dmath::RUN_COUNT);
 	for (int i = 0; i < runCount; i++)
 	{
 		timeProfile += problems_[problem]->operator()();
