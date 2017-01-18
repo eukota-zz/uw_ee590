@@ -1,6 +1,11 @@
 #pragma once
 #include <map>
 
+extern int GLOBAL_ARRAY_WIDTH;
+extern int GLOBAL_ARRAY_HEIGHT;
+extern bool SKIP_VERIFICATION;
+
+
 struct ResultsStruct
 {
 	ResultsStruct();
@@ -59,3 +64,9 @@ protected:
 	std::string GroupName;
 	std::map<int, ProblemGroup*> groups_;
 };
+
+ProblemGroup* GroupManagerInputControlFactory();
+int SetValueM(ResultsStruct* results);
+int SetValueN(ResultsStruct* results);
+int SkipVerify(ResultsStruct* results);
+int RunCount(ResultsStruct* results);

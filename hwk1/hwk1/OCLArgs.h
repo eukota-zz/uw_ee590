@@ -15,6 +15,7 @@
 struct ocl_args_d_t
 {
 	ocl_args_d_t();
+	ocl_args_d_t(cl_device_type deviceType);
 	~ocl_args_d_t();
 
 	// Regular OpenCL objects:
@@ -40,6 +41,7 @@ struct ocl_args_d_t
 };
 
 int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input);
+int CreateReadBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4* input, cl_uint arrayWidth, cl_uint arrayHeight);
 int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight);
 int CreateWriteBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* output, cl_uint arrayWidth, cl_uint arrayHeight);
 cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum);

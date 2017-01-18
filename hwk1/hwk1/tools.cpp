@@ -35,9 +35,23 @@ namespace tools
 		return v;
 	}
 
-	/*
-	* Generate random value for input buffers
-	*/
+	cl_float randFloat()
+	{
+		return (cl_float)(rand() % 1000);
+	}
+
+	void generateInputFloat4(cl_float4* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
+	{
+		size_t array_size = arrayWidth * arrayHeight;
+		for (size_t i = 0; i < array_size; ++i)
+		{
+			inputArray[i].x = randFloat();
+			inputArray[i].y = randFloat();
+			inputArray[i].z = randFloat();
+			inputArray[i].w = randFloat();
+		}
+	}
+
 	void generateInputCL(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
 	{
 		// random initialization of input

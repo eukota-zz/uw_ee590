@@ -6,6 +6,10 @@
 #include "ProblemGroups.h"
 #include "arithmetic.h"
 
+int GLOBAL_ARRAY_WIDTH = 1024;
+int GLOBAL_ARRAY_HEIGHT = 1024;
+bool SKIP_VERIFICATION = false;
+
 ResultsStruct::ResultsStruct()
 	: WindowsRunTime(0.0)
 	, OpenCLRunTime(0.0)
@@ -26,16 +30,16 @@ void PrintResults(const std::vector<ResultsStruct*>& results)
 	{
 		totalWindowsTimes += (*i)->WindowsRunTime;
 		totalOpenCLTimes += (*i)->OpenCLRunTime;
-		printf("Run: %d: Windows Profiler Runtime: %f. OpenCL Profiler Runtime: %f.\n", num, (*i)->WindowsRunTime, (*i)->OpenCLRunTime);
+		printf("Run: %d: Windows Profiler Runtime: %f ms. OpenCL Profiler Runtime: %f ms.\n", num, (*i)->WindowsRunTime, (*i)->OpenCLRunTime);
 	}
 
 	const double WindowsAvg = totalWindowsTimes / (double)num;
 	const double OpenCLAvg = totalOpenCLTimes / (double)num;
 	printf("---------------------------\n");
 	if(results.front()->HasWindowsRunTime)
-		printf("Average Windows Profiler Runtime: %f.\n", WindowsAvg);
+		printf("Average Windows Profiler Runtime: %f ms.\n", WindowsAvg);
 	if (results.front()->HasOpenCLRunTime)
-		printf("Average OpenCL Profiler Runtime : %f.\n", OpenCLAvg);
+		printf("Average OpenCL Profiler Runtime : %f ms.\n", OpenCLAvg);
 }
 
 int ProblemGroup::operator()(int problem)
@@ -52,7 +56,7 @@ int ProblemGroup::operator()(int problem)
 	for (int i = 0; i < runCount; i++)
 	{
 		if(GroupNum() != 0)
-			printf("\r Running... %d", i);
+			printf("\r Running... %d. ", i);
 		ResultsStruct* result = new ResultsStruct();
 		retVal = problems_[problem]->operator()(result);
 		results.push_back(result);
@@ -124,3 +128,42 @@ int GroupManager::Run()
 	} while (atoi(input.c_str()) != -1);
 	return result;
 }
+
+/////////// Input Gathering /////////////
+ProblemGroup* GroupManagerInputControlFactory()
+{
+	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
+	InputControl->problems_[1] = new Problem(&SetValueM, "Set M Value (defaults to 1024)");
+	InputControl->problems_[2] = new Problem(&SetValueN, "Set N Value (defaults to 1024)");
+	InputControl->problems_[3] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
+	InputControl->problems_[4] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
+	return InputControl;
+}
+
+int SetValueM(ResultsStruct* results)
+{
+	GLOBAL_ARRAY_WIDTH = (int)tools::GetInput("Enter value for M:");
+	return 0;
+}
+int SetValueN(ResultsStruct* results)
+{
+	GLOBAL_ARRAY_HEIGHT = (int)tools::GetInput("Enter value for N:");
+	return 0;
+}
+int SkipVerify(ResultsStruct* results)
+{
+	std::cout << "Enter 1 to Skip Verification in functions. Enter 0 to Do Verification: ";
+	unsigned int i = (unsigned int)SKIP_VERIFICATION;
+	std::cin >> i;
+	SKIP_VERIFICATION = (i == 1);
+	return 0;
+}
+int RunCount(ResultsStruct* results)
+{
+	std::cout << "Enter number of runs to do: ";
+	unsigned int i = dmath::RUN_COUNT;
+	std::cin >> i;
+	dmath::RUN_COUNT = i;
+	return 0;
+}
+

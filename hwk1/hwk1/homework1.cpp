@@ -10,23 +10,14 @@
 #include <map>
 
 using namespace std;
-namespace
-{
-	int GLOBAL_ARRAY_WIDTH = 1024;
-	int GLOBAL_ARRAY_HEIGHT = 1024;
-	bool SKIP_VERIFICATION = false;
-}
 
 /////////// HOMEWORK 1
 
 std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 {
 	std::map<int, ProblemGroup*> pgs;
-	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
-	InputControl->problems_[1] = new Problem(&SetHwk1ValueM, "Set M Value (defaults to 1024)");
-	InputControl->problems_[2] = new Problem(&SetHwk1ValueN, "Set N Value (defaults to 1024)");
-	InputControl->problems_[3] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
-	InputControl->problems_[4] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
+
+	ProblemGroup* InputControl = GroupManagerInputControlFactory();
 	pgs[InputControl->GroupNum()] = InputControl;
 
 	ProblemGroup* Homework1 = new ProblemGroup(1, "Homework 1");
@@ -43,36 +34,6 @@ std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 
 	return pgs;
 }
-
-
-/////////// Input Gathering /////////////
-int SetHwk1ValueM(ResultsStruct* results)
-{
-	GLOBAL_ARRAY_WIDTH = (int)tools::GetInput("Enter value for M:");
-	return 0;
-}
-int SetHwk1ValueN(ResultsStruct* results)
-{
-	GLOBAL_ARRAY_HEIGHT = (int)tools::GetInput("Enter value for N:");
-	return 0;
-}
-int SkipVerify(ResultsStruct* results)
-{
-	cout << "Enter 1 to Skip Verification in functions. Enter 0 to Do Verification: ";
-	unsigned int i = (unsigned int)SKIP_VERIFICATION;
-	cin >> i;
-	SKIP_VERIFICATION = (i==1);
-	return 0;
-}
-int RunCount(ResultsStruct* results)
-{
-	cout << "Enter number of runs to do: ";
-	unsigned int i = dmath::RUN_COUNT;
-	cin >> i;
-	dmath::RUN_COUNT = i;
-	return 0;
-}
-
 
 /////////// OpenCL ADD /////////// 
 int exCL_add(ResultsStruct* results)

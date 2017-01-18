@@ -9,19 +9,37 @@
 #define OPENCL_VERSION_1_2  1.2f
 #define OPENCL_VERSION_2_0  2.0f
 
-ocl_args_d_t::ocl_args_d_t() :
-	context(NULL),
-	device(NULL),
-	commandQueue(NULL),
-	program(NULL),
-	kernel(NULL),
-	platformVersion(OPENCL_VERSION_2_0),
-	deviceVersion(OPENCL_VERSION_2_0),
-	compilerVersion(OPENCL_VERSION_2_0),
-	prof_event(NULL),
-	run_time(0l)
+ocl_args_d_t::ocl_args_d_t()
+	: context(NULL)
+	, device(NULL)
+	, commandQueue(NULL)
+	, program(NULL)
+	, kernel(NULL)
+	, platformVersion(OPENCL_VERSION_2_0)
+	, deviceVersion(OPENCL_VERSION_2_0)
+	, compilerVersion(OPENCL_VERSION_2_0)
+	, prof_event(NULL)
+	, run_time(0l)
 {
+
 }
+
+ocl_args_d_t::ocl_args_d_t(cl_device_type deviceType)
+	: context(NULL)
+	, device(NULL)
+	, commandQueue(NULL)
+	, program(NULL)
+	, kernel(NULL)
+	, platformVersion(OPENCL_VERSION_2_0)
+	, deviceVersion(OPENCL_VERSION_2_0)
+	, compilerVersion(OPENCL_VERSION_2_0)
+	, prof_event(NULL)
+	, run_time(0l)
+{
+	SetupOpenCL(deviceType);
+}
+
+
 
 /*
 * destructor - called only once
@@ -392,6 +410,19 @@ int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input)
 	cl_int err = CL_SUCCESS;
 
 	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float), input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
+
+int CreateReadBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4* input, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float4)*arrayWidth*arrayHeight, input, &err);
 	if (CL_SUCCESS != err)
 	{
 		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));

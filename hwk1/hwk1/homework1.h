@@ -14,10 +14,11 @@ public:
 	std::map<int, ProblemGroup*> GroupFactory();
 };
 
-int SetHwk1ValueN(ResultsStruct* results);
 int SetHwk1ValueM(ResultsStruct* results);
+int SetHwk1ValueN(ResultsStruct* results);
 int SkipVerify(ResultsStruct* results);
 int RunCount(ResultsStruct* results);
+
 int exCL_add(ResultsStruct* results);
 int exSequential_addC(ResultsStruct* results);
 int exSequential_addSTL(ResultsStruct* results);

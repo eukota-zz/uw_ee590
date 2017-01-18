@@ -8,6 +8,8 @@ namespace tools
 
 	std::vector<std::string> split(const std::string& str, const char* delim);
 
+	void generateInputFloat4(cl_float4* inputArray, cl_uint arrayWidth, cl_uint arrayHeight);
+
 	void generateInputCL(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight);
 
 	void generateInputCMatrix(float arr[1024][1024]);
