@@ -45,7 +45,7 @@ int _tmain(int argc, TCHAR* argv[])
 	string input;
 	do
 	{
-		float res = 0;
+		int res = 0;
 		PrintInstructions();
 		cin >> input;
 		if (input == "1")

@@ -15,5 +15,5 @@ struct ProfilerStruct
 	void Start();
 	void Stop();
 	void AcquireFrequency();
-	float Log();
+	float Log(bool writeToLog = false);
 };

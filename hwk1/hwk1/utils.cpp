@@ -129,8 +129,7 @@ cl_platform_id FindOpenCLPlatform(const char* preferredPlatform, cl_device_type 
 		LogError("Error: clGetplatform_ids() to get num platforms returned %s.\n", TranslateOpenCLError(err));
 		return NULL;
 	}
-	LogInfo("Number of available platforms: %u\n", numPlatforms);
-
+	
 	if (0 == numPlatforms)
 	{
 		LogError("Error: No platforms found!\n");

@@ -17,17 +17,6 @@ namespace tools
 		return v;
 	}
 
-	// Prints out a list of the functions stored in the funcs vector with their descriptions
-	// This is used when printing a "menu" of items to choose to run
-	void PrintFuncs(const std::vector<FuncPtr>& funcs)
-	{
-		int funcNum = 0;
-		for (std::vector<FuncPtr>::const_iterator i = funcs.begin(), e = funcs.end(); i != e; ++i, funcNum++)
-		{
-			std::cout << funcNum << ": " << i->description.c_str() << std::endl;
-		}
-	}
-
 	std::vector<std::string> split(const std::string& str, const char* delim)
 	{
 		std::vector<std::string> v;

@@ -4,24 +4,7 @@
 
 namespace tools
 {
-	class FuncPtr
-	{
-	private:
-		int(*funcPtr)(ProfilerStruct*);
-		ProfilerStruct profiler;
-	public:
-		FuncPtr(int(*f)(ProfilerStruct*), const std::string& desc) : funcPtr(f), description(desc) {}
-		int operator()()
-		{ 
-			std::cout << "Running: " << description.c_str() << std::endl;
-			return funcPtr(&profiler);
-		}
-		std::string description;
-	};
-
 	float GetInput(const std::string& prompt);
-
-	void PrintFuncs(const std::vector<FuncPtr>& funcs);
 
 	std::vector<std::string> split(const std::string& str, const char* delim);
 

@@ -6,20 +6,63 @@
 #include "ProblemGroups.h"
 #include "arithmetic.h"
 
-float ProblemGroup::operator()(int problem)
+ResultsStruct::ResultsStruct()
+	: WindowsRunTime(0.0)
+	, OpenCLRunTime(0.0)
+	, HasWindowsRunTime(false)
+	, HasOpenCLRunTime(false)
+{
+}
+
+void PrintResults(const std::vector<ResultsStruct*>& results)
+{
+	if (results.empty())
+		return;
+
+	double totalWindowsTimes = 0.0;
+	double totalOpenCLTimes = 0.0;
+	int num = 1;
+	for (std::vector<ResultsStruct*>::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
+	{
+		totalWindowsTimes += (*i)->WindowsRunTime;
+		totalOpenCLTimes += (*i)->OpenCLRunTime;
+		printf("Run: %d: Windows Profiler Runtime: %f. OpenCL Profiler Runtime: %f.\n", num, (*i)->WindowsRunTime, (*i)->OpenCLRunTime);
+	}
+
+	const double WindowsAvg = totalWindowsTimes / (double)num;
+	const double OpenCLAvg = totalOpenCLTimes / (double)num;
+	printf("---------------------------\n");
+	if(results.front()->HasWindowsRunTime)
+		printf("Average Windows Profiler Runtime: %f.\n", WindowsAvg);
+	if (results.front()->HasOpenCLRunTime)
+		printf("Average OpenCL Profiler Runtime : %f.\n", OpenCLAvg);
+}
+
+int ProblemGroup::operator()(int problem)
 {
 	if (problems_.find(problem) == problems_.end())
 	{
 		std::cout << "WARNING: " << problem_group_num_ << "." << problem << " not found" << std::endl;
-		return 0.0;
+		return 0;
 	}
-	float timeProfile = 0.0;
+
+	std::vector<ResultsStruct*> results;
+	int retVal = 0;
 	const size_t runCount = (GroupNum() == 0 ? 1 : dmath::RUN_COUNT);
 	for (int i = 0; i < runCount; i++)
 	{
-		timeProfile += problems_[problem]->operator()();
+		if(GroupNum() != 0)
+			printf("\r Running... %d", i);
+		ResultsStruct* result = new ResultsStruct();
+		retVal = problems_[problem]->operator()(result);
+		results.push_back(result);
 	}
-	return timeProfile / (float)dmath::RUN_COUNT;
+	printf("\n");
+	if(GroupNum() != 0)
+		PrintResults(results);
+	
+	// @TODO verify that results vector destructing deletes members
+	return retVal;
 }
 GroupManager::GroupManager(const std::string& name)
 	: GroupName(name)
@@ -44,9 +87,9 @@ void GroupManager::PrintGroupMenu()
 	}
 }
 
-float GroupManager::Run()
+int GroupManager::Run()
 {
-	float result = 0;
+	int result = 0;
 	std::cout << "Running new " << GroupName.c_str() << " Tests" << std::endl;
 	std::string input;
 	do
@@ -75,7 +118,8 @@ float GroupManager::Run()
 		}
 		std::cout << "Running " << ProblemGroupName() << " " << problemgroup << ": " /*<< ProblemName() << " " */ << groups_[problemgroup]->problems_[problem]->Annotation() << std::endl;
 		result = groups_[problemgroup]->operator()(problem);
-		LogInfo("Average time: %f\n", result);
+		if (result != 0)
+			LogInfo("Possible issue with result %d.\n", result);
 
 	} while (atoi(input.c_str()) != -1);
 	return result;

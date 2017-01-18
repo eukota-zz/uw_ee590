@@ -4,7 +4,6 @@
 
 using namespace std;
 
-
 // Start Profiler
 void ProfilerStruct::Start()
 {
@@ -24,10 +23,11 @@ void ProfilerStruct::AcquireFrequency()
 }
 
 // Print Profiler Log
-float ProfilerStruct::Log()
+float ProfilerStruct::Log(bool writeToLog)
 {
 	AcquireFrequency();
 	float runTime = 1000.0f*(float)(CountStop.QuadPart - CountStart.QuadPart) / (float)Frequency.QuadPart;
-	LogInfo("Performance Counter Time %f ms.\n", runTime);
+	if(writeToLog)
+		LogInfo("Performance Counter Time %f ms.\n", runTime);
 	return runTime;
 }

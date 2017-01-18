@@ -46,17 +46,17 @@ std::map<int, ProblemGroup*> HWK1Class::GroupFactory()
 
 
 /////////// Input Gathering /////////////
-float SetHwk1ValueM()
+int SetHwk1ValueM(ResultsStruct* results)
 {
 	GLOBAL_ARRAY_WIDTH = (int)tools::GetInput("Enter value for M:");
 	return 0;
 }
-float SetHwk1ValueN()
+int SetHwk1ValueN(ResultsStruct* results)
 {
 	GLOBAL_ARRAY_HEIGHT = (int)tools::GetInput("Enter value for N:");
 	return 0;
 }
-float SkipVerify()
+int SkipVerify(ResultsStruct* results)
 {
 	cout << "Enter 1 to Skip Verification in functions. Enter 0 to Do Verification: ";
 	unsigned int i = (unsigned int)SKIP_VERIFICATION;
@@ -64,7 +64,7 @@ float SkipVerify()
 	SKIP_VERIFICATION = (i==1);
 	return 0;
 }
-float RunCount()
+int RunCount(ResultsStruct* results)
 {
 	cout << "Enter number of runs to do: ";
 	unsigned int i = dmath::RUN_COUNT;
@@ -75,7 +75,7 @@ float RunCount()
 
 
 /////////// OpenCL ADD /////////// 
-float exCL_add()
+int exCL_add(ResultsStruct* results)
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -171,10 +171,6 @@ float exCL_add()
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
 	_aligned_free(inputA);
 	_aligned_free(inputB);
@@ -187,11 +183,15 @@ float exCL_add()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	results->OpenCLRunTime = ocl.RunTimeMS();
+	results->HasOpenCLRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL ADD via C /////////// 
-float exSequential_addC()
+int exSequential_addC(ResultsStruct* results)
 {
 	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
@@ -230,20 +230,19 @@ float exSequential_addC()
 		if (!failed)
 			LogInfo("Verification passed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
 	// free memory
 	free(matrixA);
 	free(matrixB);
 	free(matrixC);
-	return runTime;
+
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL ADD via C++ STL /////////// 
-float exSequential_addSTL()
+int exSequential_addSTL(ResultsStruct* results)
 {
 	const size_t arrayWidth = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayHeight = GLOBAL_ARRAY_HEIGHT;
@@ -277,16 +276,14 @@ float exSequential_addSTL()
 		if (!failed)
 			LogInfo("Verification passed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
 
 /////////// OpenCL SAXPY /////////// 
-float exCL_SAXPY_1D()
+int exCL_SAXPY_1D(ResultsStruct* results)
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -387,11 +384,6 @@ float exCL_SAXPY_1D()
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
-
 
 	free(inputA);
 	_aligned_free(inputX);
@@ -407,11 +399,15 @@ float exCL_SAXPY_1D()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	results->OpenCLRunTime = ocl.RunTimeMS();
+	results->HasOpenCLRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL SAXPY 1D via C /////////// 
-float exSequential_SAXPY_1D_C()
+int exSequential_SAXPY_1D_C(ResultsStruct* results)
 {
 	// allocate memory
 	const size_t width = GLOBAL_ARRAY_WIDTH;
@@ -446,21 +442,19 @@ float exSequential_SAXPY_1D_C()
 		if (!failed)
 			LogInfo("Verification passed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
 	// free memory
 	free(matrixA);
 	free(matrixB);
 	free(matrixC);
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL SAXPY 1D via C++ STL /////////// 
-float exSequential_SAXPY_1D_STL()
+int exSequential_SAXPY_1D_STL(ResultsStruct* results)
 {
 	const size_t width = GLOBAL_ARRAY_WIDTH;
 	std::vector<float> matrixA(width, 0.0);
@@ -497,17 +491,15 @@ float exSequential_SAXPY_1D_STL()
 		if (!failed)
 			LogInfo("Verification passed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
 	// no need to clear memory - C++ vectors will delete on going out of scope
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
 
 /////////// OpenCL SAXPY 2D /////////// 
-float exCL_SAXPY_2D()
+int exCL_SAXPY_2D(ResultsStruct* results)
 {
 	//initialize Open CL objects (context, queue, etc.)
 	cl_int err;
@@ -656,10 +648,6 @@ float exCL_SAXPY_2D()
 		if (CL_SUCCESS != UnmapHostBufferFromLocal(&ocl.commandQueue, &dstMem, resultPtr))
 			LogInfo("UnmapHostBufferFromLocal Failed.\n");
 	}
-	else
-	{
-		LogInfo("Verification skipped.\n");
-	}
 
 	_aligned_free(inputA);
 	_aligned_free(inputX);
@@ -675,11 +663,15 @@ float exCL_SAXPY_2D()
 	if (CL_SUCCESS != clReleaseMemObject(dstMem))
 		LogError("Error: clReleaseMemObject returned '%s'.\n", TranslateOpenCLError(err));
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	results->OpenCLRunTime = ocl.RunTimeMS();
+	results->HasOpenCLRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C /////////// 
-float exSequential_SAXPY_2D_C()
+int exSequential_SAXPY_2D_C(ResultsStruct* results)
 {
 	const size_t arrayValM = GLOBAL_ARRAY_WIDTH;
 	const size_t arrayValN = GLOBAL_ARRAY_HEIGHT;
@@ -700,18 +692,18 @@ float exSequential_SAXPY_2D_C()
 	profiler.Stop();
 	float runTime = profiler.Log();
 
-	LogInfo("Verification skipped.\n");
-
 	free(matrixA);
 	free(matrixB);
 	free(matrixC);
 	free(matrixD);
 
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
 
 /////////// SEQUENTIAL SAXPY 2D via C++ STL /////////// 
-float exSequential_SAXPY_2D_STL()
+int exSequential_SAXPY_2D_STL(ResultsStruct* results)
 {
 	const size_t M = GLOBAL_ARRAY_WIDTH;
 	const size_t N = GLOBAL_ARRAY_HEIGHT;
@@ -732,7 +724,7 @@ float exSequential_SAXPY_2D_STL()
 	profiler.Stop();
 	float runTime = profiler.Log();
 
-	LogInfo("Verification skipped.\n");
-
-	return runTime;
+	results->WindowsRunTime = (double)runTime;
+	results->HasWindowsRunTime = true;
+	return 0;
 }
