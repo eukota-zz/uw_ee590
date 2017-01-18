@@ -19,6 +19,8 @@ namespace tools
 		std::string description;
 	};
 
+	float GetInput(const std::string& prompt);
+
 	void PrintFuncs(const std::vector<FuncPtr>& funcs);
 
 	std::vector<std::string> split(const std::string& str, const char* delim);

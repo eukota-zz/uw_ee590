@@ -1,4 +1,6 @@
 #include <vector>
+#include <iostream>
+#include <string>
 #include "tools.h"
 #include "CL\cl.h"
 
@@ -7,6 +9,13 @@
 
 namespace tools
 {
+	float GetInput(const std::string& prompt)
+	{
+		std::cout << prompt;
+		float v;
+		std::cin >> v;
+		return v;
+	}
 
 	// Prints out a list of the functions stored in the funcs vector with their descriptions
 	// This is used when printing a "menu" of items to choose to run

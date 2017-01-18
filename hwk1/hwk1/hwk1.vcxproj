@@ -31,6 +31,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E99F5DFC-113A-4BC3-8253-90A6AC0C9A9D}</ProjectGuid>
     <RootNamespace>hwk1</RootNamespace>
+    <ProjectName>homework</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -182,19 +183,27 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="enums.cpp" />
+    <ClCompile Include="homework1.cpp" />
+    <ClCompile Include="homework2.cpp" />
+    <ClCompile Include="OCLArgs.cpp" />
     <ClCompile Include="ProblemGroups.cpp" />
     <ClCompile Include="profiler.cpp" />
-    <ClCompile Include="hwk1.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="tools.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arithmetic.h" />
+    <ClInclude Include="enums.h" />
+    <ClInclude Include="homework1.h" />
+    <ClInclude Include="homework2.h" />
+    <ClInclude Include="OCLArgs.h" />
     <ClInclude Include="ProblemGroups.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="profiler.h" />
-    <ClInclude Include="hwk1.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>

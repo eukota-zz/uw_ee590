@@ -21,9 +21,6 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hwk1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="arithmetic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,12 +33,24 @@
     <ClCompile Include="ProblemGroups.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="enums.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OCLArgs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="homework1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="homework2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="hwk1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="profiler.h">
@@ -54,6 +63,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ProblemGroups.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="enums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OCLArgs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="homework1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="homework2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
