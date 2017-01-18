@@ -149,9 +149,11 @@ int ocl_args_d_t::SetupOpenCL(cl_device_type deviceType)
 		const cl_command_queue_properties properties[] = { CL_QUEUE_PROPERTIES, 0, 0 };
 		this->commandQueue = clCreateCommandQueueWithProperties(this->context, this->device, properties, &err);
 	}
-	else {
+	else
+	{
 		// default behavior: OpenCL 1.2
 		cl_command_queue_properties properties = 0;
+#pragma warning(suppress : 4996) // this is only used if OpenCL 1.2 is used in which case we still want the deprecated behavior
 		this->commandQueue = clCreateCommandQueue(this->context, this->device, properties, &err);
 	}
 #else
