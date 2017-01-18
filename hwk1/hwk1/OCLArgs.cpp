@@ -15,9 +15,11 @@ ocl_args_d_t::ocl_args_d_t() :
 	commandQueue(NULL),
 	program(NULL),
 	kernel(NULL),
-	platformVersion(OPENCL_VERSION_1_2),
-	deviceVersion(OPENCL_VERSION_1_2),
-	compilerVersion(OPENCL_VERSION_1_2)
+	platformVersion(OPENCL_VERSION_2_0),
+	deviceVersion(OPENCL_VERSION_2_0),
+	compilerVersion(OPENCL_VERSION_2_0),
+	prof_event(NULL),
+	run_time(0l)
 {
 }
 
@@ -146,7 +148,7 @@ int ocl_args_d_t::SetupOpenCL(cl_device_type deviceType)
 #ifdef CL_VERSION_2_0
 	if (OPENCL_VERSION_2_0 == this->deviceVersion)
 	{
-		const cl_command_queue_properties properties[] = { CL_QUEUE_PROPERTIES, 0, 0 };
+		const cl_command_queue_properties properties[] = { CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0 };
 		this->commandQueue = clCreateCommandQueueWithProperties(this->context, this->device, properties, &err);
 	}
 	else
@@ -332,7 +334,7 @@ cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCoun
 	cl_int err = CL_SUCCESS;
 
 	// execute kernel
-	err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, NULL /* cl_even profileEvent */);
+	err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, &prof_event);
 	if (CL_SUCCESS != err)
 	{
 		LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
@@ -347,9 +349,43 @@ cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCoun
 		return err;
 	}
 
+	// Update internal OpenCL Profiler
+	err = UpdateProfiler();
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
+		return err;
+	}
 	return CL_SUCCESS;
 }
 
+cl_uint ocl_args_d_t::UpdateProfiler()
+{
+	cl_int err = clWaitForEvents(1, &prof_event);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+
+	cl_ulong start_time, end_time;
+	size_t return_bytes;
+	err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &start_time, &return_bytes);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clGetEventProfilingInfo for CL_PROFILING_COMMAND_QUEUED return %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+
+	err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, &return_bytes);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clGetEventProfilingInfo for CL_PROFILING_COMMAND_QUEUED return %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	run_time = end_time - start_time;
+	return CL_SUCCESS;
+}
 
 int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input)
 {

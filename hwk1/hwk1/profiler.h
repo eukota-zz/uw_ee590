@@ -3,6 +3,7 @@
 #include <vector>
 
 
+
 #include <Windows.h> ///< for performance counters
 
 struct ProfilerStruct
@@ -16,5 +17,3 @@ struct ProfilerStruct
 	void AcquireFrequency();
 	float Log();
 };
-
-

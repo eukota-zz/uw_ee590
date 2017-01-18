@@ -27,6 +27,12 @@ struct ocl_args_d_t
 	float            deviceVersion;     // hold the OpenCL device version (default. 1.2)
 	float            compilerVersion;   // hold the device OpenCL C version (default. 1.2)
 
+	// OpenCL Event Profiler
+	cl_event prof_event;
+	cl_ulong run_time; // run time in nanoseconds by default
+	cl_uint UpdateProfiler();
+	cl_double RunTimeMS() { return (double)run_time / 1000000;  } // run time in milliseconds
+
 	int SetupOpenCL(cl_device_type deviceType);
 	int CreateAndBuildProgram(const std::string& filename);
 	int GetPlatformAndDeviceVersion(cl_platform_id platformId);
