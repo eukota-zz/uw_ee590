@@ -48,3 +48,20 @@ __kernel void FMA_Manual(__global float16* pA, __global float16* pB, __global fl
 	pD[idx].se = pA[idx].se*pB[idx].se + pC[idx].se;
 	pD[idx].sf = pA[idx].sf*pB[idx].sf + pC[idx].sf;
 }
+
+// stores cross product of each float4 value in pA and pB in pC
+__kernel void CrossProduct(__global float4* pA, __global float4* pB, __global float4* pC)
+{ 
+	int idx = get_global_id(0);
+	pC[idx] = cross(pA[idx], pB[idx]);
+}
+
+// stores cross product of each float4 value in pA and pB in pC
+__kernel void CrossProduct_Manual(__global float4* pA, __global float4* pB, __global float4* pC)
+{ 
+	int idx = get_global_id(0);
+	pC[idx].x =      (pA[idx].y*pB[idx].z - pA[idx].z*pB[idx].y);
+	pC[idx].y = -1.0*(pA[idx].x*pB[idx].z - pA[idx].z*pB[idx].x);
+	pC[idx].z =      (pA[idx].x*pB[idx].y - pA[idx].y*pB[idx].x);
+	// ignore w
+}
