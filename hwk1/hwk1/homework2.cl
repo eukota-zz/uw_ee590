@@ -65,3 +65,24 @@ __kernel void CrossProduct_Manual(__global float4* pA, __global float4* pB, __gl
 	pC[idx].z =      (pA[idx].x*pB[idx].y - pA[idx].y*pB[idx].x);
 	// ignore w
 }
+
+// stores the length of pA via "fast_length" in pB
+__kernel void FastLength(__global float4* pA, __global float* pB)
+{ 
+	int idx = get_global_id(0);
+	pB[idx] = fast_length(pA[idx]);
+}
+
+// stores the length of pA via "native_sqrt" in pB
+__kernel void NativeSquareRoot(__global float4* pA, __global float4* pB)
+{ 
+	int idx = get_global_id(0);
+	pB[idx] = native_sqrt(pA[idx]);
+}
+
+// stores the length of pA via "sqrt" in pB
+__kernel void SquareRoot(__global float4* pA, __global float4* pB)
+{ 
+	int idx = get_global_id(0);
+	pB[idx] = sqrt(pA[idx]);
+}

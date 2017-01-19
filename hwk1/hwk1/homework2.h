@@ -28,7 +28,9 @@ int exCL_CrossProduct(ResultsStruct* results);
 int exCL_CrossProduct_Manual(ResultsStruct* results);
 int exSequential_CrossProduct(ResultsStruct* results);
 
+int exCL_SquareRoot_Helper(ResultsStruct* results, const std::string& KernelName);
 int exCL_FastLength(ResultsStruct* results);
 int exCL_NativeSquareRoot(ResultsStruct* results);
 int exCL_SquareRoot(ResultsStruct* results);
+int exSequential_SquareRoot(ResultsStruct* results);
 

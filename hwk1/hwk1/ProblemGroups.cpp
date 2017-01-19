@@ -132,11 +132,13 @@ int GroupManager::Run()
 /////////// Input Gathering /////////////
 ProblemGroup* GroupManagerInputControlFactory()
 {
+	int num = 0;
 	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
-	InputControl->problems_[1] = new Problem(&SetValueM, "Set M Value (defaults to 1024)");
-	InputControl->problems_[2] = new Problem(&SetValueN, "Set N Value (defaults to 1024)");
-	InputControl->problems_[3] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
-	InputControl->problems_[4] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
+	InputControl->problems_[++num] = new Problem(&SetValueM, "Set M Value (defaults to 1024)");
+	InputControl->problems_[++num] = new Problem(&SetValueN, "Set N Value (defaults to 1024)");
+	InputControl->problems_[++num] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
+	InputControl->problems_[++num] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
+	InputControl->problems_[++num] = new Problem(&ComparisonThreshold, "Set minimum difference for verifications.");
 	return InputControl;
 }
 
@@ -164,6 +166,14 @@ int RunCount(ResultsStruct* results)
 	unsigned int i = dmath::RUN_COUNT;
 	std::cin >> i;
 	dmath::RUN_COUNT = i;
+	return 0;
+}
+int ComparisonThreshold(ResultsStruct* results)
+{
+	std::cout << "Enter minimum difference value (currently " << dmath::MIN_DIFF << "): ";
+	float i = dmath::MIN_DIFF;
+	std::cin >> i;
+	dmath::MIN_DIFF = i;
 	return 0;
 }
 

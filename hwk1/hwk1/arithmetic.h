@@ -2,7 +2,7 @@
 namespace dmath
 {
 	extern unsigned int RUN_COUNT;
-
+	extern float MIN_DIFF;
 	// ADD C
 	void add(float* matrixA, float* matrixB, float* matrixC, size_t width, size_t height);
 

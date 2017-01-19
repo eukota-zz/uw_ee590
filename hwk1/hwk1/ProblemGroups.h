@@ -70,3 +70,4 @@ int SetValueM(ResultsStruct* results);
 int SetValueN(ResultsStruct* results);
 int SkipVerify(ResultsStruct* results);
 int RunCount(ResultsStruct* results);
+int ComparisonThreshold(ResultsStruct* results);
