@@ -13,7 +13,9 @@ struct ResultsStruct
 	double OpenCLRunTime;
 	bool HasWindowsRunTime;
 	bool HasOpenCLRunTime;
+	std::string Annotation;
 };
+void PrintToFile(const std::vector<ResultsStruct*>& results);
 void PrintResults(const std::vector<ResultsStruct*>& results);
 
 ////////////// PROBLEMS
@@ -71,3 +73,4 @@ int SetValueN(ResultsStruct* results);
 int SkipVerify(ResultsStruct* results);
 int RunCount(ResultsStruct* results);
 int ComparisonThreshold(ResultsStruct* results);
+int PrintResultsToFile(ResultsStruct* results);

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include "tools.h"
@@ -9,6 +10,7 @@
 int GLOBAL_ARRAY_WIDTH = 1024;
 int GLOBAL_ARRAY_HEIGHT = 1024;
 bool SKIP_VERIFICATION = false;
+bool PRINT_TO_FILE = false;
 
 ResultsStruct::ResultsStruct()
 	: WindowsRunTime(0.0)
@@ -18,6 +20,34 @@ ResultsStruct::ResultsStruct()
 {
 }
 
+void PrintToFile(const std::vector<ResultsStruct*>& results)
+{
+	std::ofstream outfile;
+	outfile.open("hw2_results.txt", std::ios_base::app); //<@TODO Change to take name of output file or allow providing it as input control
+	if (results.empty())
+	{
+		outfile << "No results";
+		return;
+	}
+		
+
+	double totalWindowsTimes = 0.0;
+	double totalOpenCLTimes = 0.0;
+	int num = 0;
+	outfile << results.front()->Annotation << std::endl;
+	outfile << "Run#, WindowsTime, OpenCLTime" << std::endl;
+	for (std::vector<ResultsStruct*>::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
+	{
+		totalWindowsTimes += (*i)->WindowsRunTime;
+		totalOpenCLTimes += (*i)->OpenCLRunTime;
+		outfile << num+1 << "," << (*i)->WindowsRunTime << "," << (*i)->OpenCLRunTime << std::endl;
+	}
+	const double WindowsAvg = totalWindowsTimes / (double)num;
+	const double OpenCLAvg = totalOpenCLTimes / (double)num;
+
+	outfile << "Windows Average: " << WindowsAvg << "; OpenCL Average: " << OpenCLAvg << std::endl;
+}
+
 void PrintResults(const std::vector<ResultsStruct*>& results)
 {
 	if (results.empty())
@@ -25,12 +55,12 @@ void PrintResults(const std::vector<ResultsStruct*>& results)
 
 	double totalWindowsTimes = 0.0;
 	double totalOpenCLTimes = 0.0;
-	int num = 1;
+	int num = 0;
 	for (std::vector<ResultsStruct*>::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
 	{
 		totalWindowsTimes += (*i)->WindowsRunTime;
 		totalOpenCLTimes += (*i)->OpenCLRunTime;
-		printf("Run: %d: Windows Profiler Runtime: %f ms. OpenCL Profiler Runtime: %f ms.\n", num, (*i)->WindowsRunTime, (*i)->OpenCLRunTime);
+		printf("Run: %d: Windows Profiler Runtime: %f ms. OpenCL Profiler Runtime: %f ms.\n", num+1, (*i)->WindowsRunTime, (*i)->OpenCLRunTime);
 	}
 
 	const double WindowsAvg = totalWindowsTimes / (double)num;
@@ -40,6 +70,9 @@ void PrintResults(const std::vector<ResultsStruct*>& results)
 		printf("Average Windows Profiler Runtime: %f ms.\n", WindowsAvg);
 	if (results.front()->HasOpenCLRunTime)
 		printf("Average OpenCL Profiler Runtime : %f ms.\n", OpenCLAvg);
+
+	if (PRINT_TO_FILE)
+		PrintToFile(results);
 }
 
 int ProblemGroup::operator()(int problem)
@@ -59,11 +92,14 @@ int ProblemGroup::operator()(int problem)
 			printf("\r Running... %d. ", i);
 		ResultsStruct* result = new ResultsStruct();
 		retVal = problems_[problem]->operator()(result);
+		result->Annotation = problems_[problem]->Annotation();
 		results.push_back(result);
 	}
-	printf("\n");
-	if(GroupNum() != 0)
+	if (GroupNum() != 0)
+	{
+		printf("\n");
 		PrintResults(results);
+	}
 	
 	// @TODO verify that results vector destructing deletes members
 	return retVal;
@@ -139,6 +175,7 @@ ProblemGroup* GroupManagerInputControlFactory()
 	InputControl->problems_[++num] = new Problem(&SkipVerify, "Skip Verification (defaults to 0)");
 	InputControl->problems_[++num] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
 	InputControl->problems_[++num] = new Problem(&ComparisonThreshold, "Set minimum difference for verifications.");
+	InputControl->problems_[++num] = new Problem(&PrintResultsToFile, "Set times to print to file (defaults to 0).");
 	return InputControl;
 }
 
@@ -176,4 +213,11 @@ int ComparisonThreshold(ResultsStruct* results)
 	dmath::MIN_DIFF = i;
 	return 0;
 }
-
+int PrintResultsToFile(ResultsStruct* results)
+{
+	std::cout << "Enter 1 to print results to file (currently " << PRINT_TO_FILE << "): ";
+	unsigned int i = (unsigned int)PRINT_TO_FILE;
+	std::cin >> i;
+	PRINT_TO_FILE = (i == 1);
+	return 0;
+}

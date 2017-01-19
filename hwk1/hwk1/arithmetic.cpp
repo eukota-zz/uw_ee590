@@ -4,7 +4,7 @@
 namespace dmath
 {
 	unsigned int RUN_COUNT = 1;
-	float MIN_DIFF = 0.001;
+	float MIN_DIFF = (float)0.001;
 
 	// Sequential Add with C
 	void add(float* matrixA, float* matrixB, float* matrixC, size_t width, size_t height)
