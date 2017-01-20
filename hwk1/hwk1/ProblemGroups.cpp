@@ -11,6 +11,7 @@ int GLOBAL_ARRAY_WIDTH = 1024;
 int GLOBAL_ARRAY_HEIGHT = 1024;
 bool SKIP_VERIFICATION = false;
 bool PRINT_TO_FILE = false;
+std::string RESULTS_FILE = "results.txt";
 
 ResultsStruct::ResultsStruct()
 	: WindowsRunTime(0.0)
@@ -20,10 +21,21 @@ ResultsStruct::ResultsStruct()
 {
 }
 
-void PrintToFile(const std::vector<ResultsStruct*>& results)
+// Ensure memory is cleared
+ResultsList::~ResultsList()
+{
+	while (!empty())
+	{
+		ResultsStruct* s = this->back();
+		this->pop_back();
+		delete s;
+	}
+}
+
+void PrintToFile(const ResultsList& results)
 {
 	std::ofstream outfile;
-	outfile.open("hw2_results.txt", std::ios_base::app); //<@TODO Change to take name of output file or allow providing it as input control
+	outfile.open(RESULTS_FILE, std::ios_base::app); 
 	if (results.empty())
 	{
 		outfile << "No results";
@@ -36,7 +48,7 @@ void PrintToFile(const std::vector<ResultsStruct*>& results)
 	int num = 0;
 	outfile << results.front()->Annotation << std::endl;
 	outfile << "Run#, WindowsTime, OpenCLTime" << std::endl;
-	for (std::vector<ResultsStruct*>::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
+	for (ResultsList::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
 	{
 		totalWindowsTimes += (*i)->WindowsRunTime;
 		totalOpenCLTimes += (*i)->OpenCLRunTime;
@@ -48,7 +60,7 @@ void PrintToFile(const std::vector<ResultsStruct*>& results)
 	outfile << "Windows Average: " << WindowsAvg << "; OpenCL Average: " << OpenCLAvg << std::endl;
 }
 
-void PrintResults(const std::vector<ResultsStruct*>& results)
+void PrintResults(const ResultsList& results)
 {
 	if (results.empty())
 		return;
@@ -56,7 +68,7 @@ void PrintResults(const std::vector<ResultsStruct*>& results)
 	double totalWindowsTimes = 0.0;
 	double totalOpenCLTimes = 0.0;
 	int num = 0;
-	for (std::vector<ResultsStruct*>::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
+	for (ResultsList::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
 	{
 		totalWindowsTimes += (*i)->WindowsRunTime;
 		totalOpenCLTimes += (*i)->OpenCLRunTime;
@@ -83,7 +95,7 @@ int ProblemGroup::operator()(int problem)
 		return 0;
 	}
 
-	std::vector<ResultsStruct*> results;
+	ResultsList results;
 	int retVal = 0;
 	const size_t runCount = (GroupNum() == 0 ? 1 : dmath::RUN_COUNT);
 	for (int i = 0; i < runCount; i++)
@@ -101,7 +113,6 @@ int ProblemGroup::operator()(int problem)
 		PrintResults(results);
 	}
 	
-	// @TODO verify that results vector destructing deletes members
 	return retVal;
 }
 GroupManager::GroupManager(const std::string& name)
@@ -168,6 +179,7 @@ int GroupManager::Run()
 /////////// Input Gathering /////////////
 ProblemGroup* GroupManagerInputControlFactory()
 {
+	// @TODO Modify structure so that input control annotation can print current value - will need a way to fetch current value - maybe mini-IOC?
 	int num = 0;
 	ProblemGroup* InputControl = new ProblemGroup(0, "Input Control");
 	InputControl->problems_[++num] = new Problem(&SetValueM, "Set M Value (defaults to 1024)");
@@ -176,6 +188,7 @@ ProblemGroup* GroupManagerInputControlFactory()
 	InputControl->problems_[++num] = new Problem(&RunCount, "Set the number of runs (defaults to 1)");
 	InputControl->problems_[++num] = new Problem(&ComparisonThreshold, "Set minimum difference for verifications.");
 	InputControl->problems_[++num] = new Problem(&PrintResultsToFile, "Set times to print to file (defaults to 0).");
+	InputControl->problems_[++num] = new Problem(&SetResultsFile, "Set the file path for saving results.");
 	return InputControl;
 }
 
@@ -219,5 +232,13 @@ int PrintResultsToFile(ResultsStruct* results)
 	unsigned int i = (unsigned int)PRINT_TO_FILE;
 	std::cin >> i;
 	PRINT_TO_FILE = (i == 1);
+	return 0;
+}
+int SetResultsFile(ResultsStruct* results)
+{
+	std::cout << "Enter path to output file to (currently " << RESULTS_FILE << "): ";
+	std::string s(RESULTS_FILE);
+	std::cin >> s;
+	RESULTS_FILE = s;
 	return 0;
 }

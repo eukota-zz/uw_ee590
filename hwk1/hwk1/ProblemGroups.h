@@ -4,7 +4,8 @@
 extern int GLOBAL_ARRAY_WIDTH;
 extern int GLOBAL_ARRAY_HEIGHT;
 extern bool SKIP_VERIFICATION;
-
+extern bool PRINT_TO_FILE;
+extern std::string RESULTS_FILE;
 
 struct ResultsStruct
 {
@@ -15,8 +16,15 @@ struct ResultsStruct
 	bool HasOpenCLRunTime;
 	std::string Annotation;
 };
-void PrintToFile(const std::vector<ResultsStruct*>& results);
-void PrintResults(const std::vector<ResultsStruct*>& results);
+
+class ResultsList : public std::vector<ResultsStruct*>
+{
+public:
+	~ResultsList();
+};
+
+void PrintToFile(const ResultsList& results);
+void PrintResults(const ResultsList& results);
 
 ////////////// PROBLEMS
 class Problem
@@ -74,3 +82,4 @@ int SkipVerify(ResultsStruct* results);
 int RunCount(ResultsStruct* results);
 int ComparisonThreshold(ResultsStruct* results);
 int PrintResultsToFile(ResultsStruct* results);
+int SetResultsFile(ResultsStruct* results);
