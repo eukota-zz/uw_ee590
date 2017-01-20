@@ -39,8 +39,6 @@ ocl_args_d_t::ocl_args_d_t(cl_device_type deviceType)
 	SetupOpenCL(deviceType);
 }
 
-
-
 /*
 * destructor - called only once
 * Release all OpenCL objects
@@ -110,9 +108,6 @@ ocl_args_d_t::~ocl_args_d_t()
 	* but just queried from OpenCL runtime.
 	*/
 }
-
-
-
 
 /*
 * This function picks/creates necessary OpenCL objects which are needed.
@@ -258,8 +253,6 @@ Finish:
 
 	return err;
 }
-
-
 
 /*
 * This function read the OpenCL platdorm and device versions
@@ -412,71 +405,16 @@ cl_uint ocl_args_d_t::UpdateProfiler()
 	return CL_SUCCESS;
 }
 
-int CreateReadBufferArg_Float(cl_context *context, cl_mem* mem, cl_float* input)
+cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum)
 {
-	cl_int err = CL_SUCCESS;
-
-	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float), input, &err);
+	cl_int err = clSetKernelArg(*kernel, argNum, sizeof(cl_mem), (void *)mem);
 	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-	return 0;
+		LogError("error: Failed to set argument %d, returned %s\n", argNum, TranslateOpenCLError(err));
+	return err;
 }
 
-int CreateReadBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4* input, cl_uint arrayWidth, cl_uint arrayHeight)
-{
-	cl_int err = CL_SUCCESS;
-
-	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float4)*arrayWidth*arrayHeight, input, &err);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-	return 0;
-}
-
-int CreateWriteBufferArg_Float4Array(cl_context *context, cl_mem* mem, cl_float4* output, cl_uint arrayWidth, cl_uint arrayHeight)
-{
-	cl_int err = CL_SUCCESS;
-	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float4) * arrayWidth * arrayHeight, output, &err);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clCreateBuffer for Write returned %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-	return 0;
-}
-
-int CreateReadBufferArg_Float16Array(cl_context *context, cl_mem* mem, cl_float16* input, cl_uint arrayWidth, cl_uint arrayHeight)
-{
-	cl_int err = CL_SUCCESS;
-
-	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float16)*arrayWidth*arrayHeight, input, &err);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-	return 0;
-}
-
-int CreateWriteBufferArg_Float16Array(cl_context *context, cl_mem* mem, cl_float16* output, cl_uint arrayWidth, cl_uint arrayHeight)
-{
-	cl_int err = CL_SUCCESS;
-	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float16) * arrayWidth * arrayHeight, output, &err);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clCreateBuffer for Write returned %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-	return 0;
-}
-
-// @TODO Combine read and write creation functions to single function differentiated with bool
-int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight)
+// CREATE READ BUFFER ARGUMENT
+int CreateReadBufferArg(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight)
 {
 	cl_int err = CL_SUCCESS;
 
@@ -489,7 +427,34 @@ int CreateReadBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* i
 	return 0;
 }
 
-int CreateWriteBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* output, cl_uint arrayWidth, cl_uint arrayHeight)
+int CreateReadBufferArg(cl_context *context, cl_mem* mem, cl_float4* input, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float4)*arrayWidth*arrayHeight, input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
+
+int CreateReadBufferArg(cl_context *context, cl_mem* mem, cl_float16* input, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+
+	*mem = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float16)*arrayWidth*arrayHeight, input, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Read returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
+
+// CREATE WRITE BUFFER ARGUMENT
+int CreateWriteBufferArg(cl_context *context, cl_mem* mem, cl_float* output, cl_uint arrayWidth, cl_uint arrayHeight)
 {
 	cl_int err = CL_SUCCESS;
 	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float) * arrayWidth * arrayHeight, output, &err);
@@ -501,12 +466,28 @@ int CreateWriteBufferArg_FloatArray(cl_context *context, cl_mem* mem, cl_float* 
 	return 0;
 }
 
-cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum)
+int CreateWriteBufferArg(cl_context *context, cl_mem* mem, cl_float4* output, cl_uint arrayWidth, cl_uint arrayHeight)
 {
-	cl_int err = clSetKernelArg(*kernel, argNum, sizeof(cl_mem), (void *)mem);
+	cl_int err = CL_SUCCESS;
+	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float4) * arrayWidth * arrayHeight, output, &err);
 	if (CL_SUCCESS != err)
-		LogError("error: Failed to set argument %d, returned %s\n", argNum, TranslateOpenCLError(err));
-	return err;
+	{
+		LogError("Error: clCreateBuffer for Write returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
+}
+
+int CreateWriteBufferArg(cl_context *context, cl_mem* mem, cl_float16* output, cl_uint arrayWidth, cl_uint arrayHeight)
+{
+	cl_int err = CL_SUCCESS;
+	*mem = clCreateBuffer(*context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR, sizeof(cl_float16) * arrayWidth * arrayHeight, output, &err);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clCreateBuffer for Write returned %s\n", TranslateOpenCLError(err));
+		return err;
+	}
+	return 0;
 }
 
 // Map Host Memory to Local Memory
@@ -584,7 +565,7 @@ cl_uint MapHostBufferToLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl
 
 // Unmap Host Memory from Local Memory
 // TO BE CALLED AFTER MapBuffer()
-cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float16* localMem)
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem)
 {
 	// Unmapped the output buffer before releasing it
 	cl_int err = clEnqueueUnmapMemObject(*commandQueue, *hostMem, localMem, 0, NULL, NULL);
@@ -604,7 +585,7 @@ cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem
 	return err;
 }
 
-cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float* localMem)
+cl_uint UnmapHostBufferFromLocal(cl_command_queue* commandQueue, cl_mem* hostMem, cl_float16* localMem)
 {
 	// Unmapped the output buffer before releasing it
 	cl_int err = clEnqueueUnmapMemObject(*commandQueue, *hostMem, localMem, 0, NULL, NULL);

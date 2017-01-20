@@ -1,9 +1,4 @@
 
-// @TODO move openCL kernel interface functions to separate file
-// Retain only the _tmain() function and console interaction
-// Consider writing a UI - ask Chris B for help?
-// Provide repo to David Pinney
-
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>

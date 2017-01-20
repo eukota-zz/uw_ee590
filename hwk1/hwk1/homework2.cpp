@@ -80,11 +80,11 @@ int exCL_DotProduct_Helper(ResultsStruct* results, const std::string& KernelName
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           srcB;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcB, inputB, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcB, inputB, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputC, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputC, arrayWidth, 1))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -238,13 +238,13 @@ int exCL_MAD_FMA_Helper(ResultsStruct* results, const std::string& KernelName)
 	cl_mem           srcB;              // hold second source buffer
 	cl_mem           srcC;              // hold third source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcB, inputB, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcB, inputB, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_Float16Array(&ocl.context, &srcC, inputC, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcC, inputC, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_Float16Array(&ocl.context, &dstMem, outputD, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputD, arrayWidth, 1))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -438,11 +438,11 @@ int exCL_CrossProduct_Helper(ResultsStruct* results, const std::string& KernelNa
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           srcB;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcB, inputB, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcB, inputB, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_Float4Array(&ocl.context, &dstMem, outputC, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputC, arrayWidth, 1))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -598,9 +598,9 @@ int exCL_FastLength(ResultsStruct* results)
 	// Create OpenCL buffers from host memory for use by Kernel
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputB, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputB, arrayWidth, 1))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -700,9 +700,9 @@ int exCL_SquareRoot_Helper(ResultsStruct* results, const std::string& KernelName
 	// Create OpenCL buffers from host memory for use by Kernel
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float4Array(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_Float4Array(&ocl.context, &dstMem, outputB, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputB, arrayWidth, 1))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.

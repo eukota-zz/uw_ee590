@@ -66,11 +66,11 @@ int exCL_add(ResultsStruct* results)
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           srcB;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcB, inputB, arrayWidth, arrayHeight))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcB, inputB, arrayWidth, arrayHeight))
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputC, arrayWidth, arrayHeight))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputC, arrayWidth, arrayHeight))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -275,13 +275,13 @@ int exCL_SAXPY_1D(ResultsStruct* results)
 	cl_mem           srcX;              // hold first source buffer
 	cl_mem           srcY;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_Float(&ocl.context, &scalarA, inputA))						// A
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &scalarA, inputA, 1, 1))						// A
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayWidth, 1))		// X
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcX, inputX, arrayWidth, 1))		// X
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayWidth, 1))		// Y
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcY, inputY, arrayWidth, 1))		// Y
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayWidth, 1))	// output
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputZ, arrayWidth, 1))	// output
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -524,13 +524,13 @@ int exCL_SAXPY_2D(ResultsStruct* results)
 	cl_mem           srcX;              // hold first source buffer
 	cl_mem           srcY;              // hold second source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcA, inputA, arrayValM, arrayValM))		// A
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayValM, arrayValM))		// A
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcX, inputX, arrayValM, arrayValN))		// X
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcX, inputX, arrayValM, arrayValN))		// X
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg_FloatArray(&ocl.context, &srcY, inputY, arrayValM, arrayValN))		// Y
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcY, inputY, arrayValM, arrayValN))		// Y
 		return -1;
-	if (CL_SUCCESS != CreateWriteBufferArg_FloatArray(&ocl.context, &dstMem, outputZ, arrayValM, arrayValN))	// output
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputZ, arrayValM, arrayValN))	// output
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
