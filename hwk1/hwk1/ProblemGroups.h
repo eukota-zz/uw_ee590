@@ -6,6 +6,7 @@ extern int GLOBAL_ARRAY_HEIGHT;
 extern bool SKIP_VERIFICATION;
 extern bool PRINT_TO_FILE;
 extern std::string RESULTS_FILE;
+extern bool FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE;
 
 struct ResultsStruct
 {
@@ -15,14 +16,21 @@ struct ResultsStruct
 	bool HasWindowsRunTime;
 	bool HasOpenCLRunTime;
 	std::string Annotation;
+	size_t WorkGroupSize;
 };
+
+// For use when sorting results lists
+bool resultTimeOCL(ResultsStruct* A, ResultsStruct* B);
 
 class ResultsList : public std::vector<ResultsStruct*>
 {
 public:
 	~ResultsList();
+
+
 };
 
+void PrintWorkGroupResultsToFile(const ResultsList& results);
 void PrintToFile(const ResultsList& results);
 void PrintResults(const ResultsList& results);
 
@@ -83,3 +91,4 @@ int RunCount(ResultsStruct* results);
 int ComparisonThreshold(ResultsStruct* results);
 int PrintResultsToFile(ResultsStruct* results);
 int SetResultsFile(ResultsStruct* results);
+int SetFindOptimalWorkGroupSize(ResultsStruct* results);

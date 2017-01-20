@@ -37,7 +37,7 @@ struct ocl_args_d_t
 	int SetupOpenCL(cl_device_type deviceType);
 	int CreateAndBuildProgram(const std::string& filename);
 	int GetPlatformAndDeviceVersion(cl_platform_id platformId);
-	cl_uint ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount);
+	cl_uint ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize = NULL);
 };
 
 cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum);

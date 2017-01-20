@@ -34,3 +34,4 @@ int exCL_NativeSquareRoot(ResultsStruct* results);
 int exCL_SquareRoot(ResultsStruct* results);
 int exSequential_SquareRoot(ResultsStruct* results);
 
+int FindOptimalWorkGroupSize(ResultsStruct* results);

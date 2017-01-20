@@ -6,7 +6,8 @@
 #include "arithmetic.h"
 #include "enums.h"
 #include <iostream>
-
+#include <vector>
+#include <algorithm>
 
 /////////// HOMEWORK 2
 namespace

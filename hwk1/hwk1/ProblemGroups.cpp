@@ -12,15 +12,21 @@ int GLOBAL_ARRAY_HEIGHT = 1024;
 bool SKIP_VERIFICATION = false;
 bool PRINT_TO_FILE = false;
 std::string RESULTS_FILE = "results.txt";
+bool FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE = false;
 
 ResultsStruct::ResultsStruct()
 	: WindowsRunTime(0.0)
 	, OpenCLRunTime(0.0)
 	, HasWindowsRunTime(false)
 	, HasOpenCLRunTime(false)
+	, WorkGroupSize(0)
 {
 }
 
+bool resultTimeOCL(ResultsStruct* A, ResultsStruct* B)
+{
+	return A->OpenCLRunTime < B->OpenCLRunTime;
+}
 // Ensure memory is cleared
 ResultsList::~ResultsList()
 {
@@ -32,6 +38,33 @@ ResultsList::~ResultsList()
 	}
 }
 
+void PrintWorkGroupResultsToFile(const ResultsList& results)
+{
+	std::ofstream outfile;
+	outfile.open(RESULTS_FILE, std::ios_base::app);
+	if (results.empty())
+	{
+		outfile << "No results";
+		return;
+	}
+
+	double bestOpenCLTime = 100000;
+	size_t bestOpenCLWorkSize = 1;
+	int num = 0;
+	outfile << results.front()->Annotation << std::endl;
+	outfile << "Run Number & WorkGroupSize & OpenCLTime\\\\hline\\hline" << std::endl;
+	for (ResultsList::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
+	{
+		if ((*i)->OpenCLRunTime < bestOpenCLTime)
+		{
+			bestOpenCLTime = (*i)->OpenCLRunTime;
+			bestOpenCLWorkSize = (*i)->WorkGroupSize;
+		}
+		outfile << num + 1 << " & " << (*i)->WorkGroupSize << " & " << (*i)->OpenCLRunTime << "\\\\" << std::endl;
+	}
+	outfile << "Best Time: " << bestOpenCLTime << "; Work Group Size: " << bestOpenCLWorkSize << std::endl;
+}
+
 void PrintToFile(const ResultsList& results)
 {
 	std::ofstream outfile;
@@ -41,18 +74,17 @@ void PrintToFile(const ResultsList& results)
 		outfile << "No results";
 		return;
 	}
-		
 
 	double totalWindowsTimes = 0.0;
 	double totalOpenCLTimes = 0.0;
 	int num = 0;
 	outfile << results.front()->Annotation << std::endl;
-	outfile << "Run#, WindowsTime, OpenCLTime" << std::endl;
+	outfile << "Run#, WorkGroupSize, WindowsTime, OpenCLTime" << std::endl;
 	for (ResultsList::const_iterator i = results.begin(), e = results.end(); i != e; ++i, ++num)
 	{
 		totalWindowsTimes += (*i)->WindowsRunTime;
 		totalOpenCLTimes += (*i)->OpenCLRunTime;
-		outfile << num+1 << "," << (*i)->WindowsRunTime << "," << (*i)->OpenCLRunTime << std::endl;
+		outfile << num+1 << "," << (*i)->WorkGroupSize << "," << (*i)->WindowsRunTime << "," << (*i)->OpenCLRunTime << std::endl;
 	}
 	const double WindowsAvg = totalWindowsTimes / (double)num;
 	const double OpenCLAvg = totalOpenCLTimes / (double)num;
@@ -189,6 +221,7 @@ ProblemGroup* GroupManagerInputControlFactory()
 	InputControl->problems_[++num] = new Problem(&ComparisonThreshold, "Set minimum difference for verifications.");
 	InputControl->problems_[++num] = new Problem(&PrintResultsToFile, "Set times to print to file (defaults to 0).");
 	InputControl->problems_[++num] = new Problem(&SetResultsFile, "Set the file path for saving results.");
+	InputControl->problems_[++num] = new Problem(&SetFindOptimalWorkGroupSize, "Enable local work group size search functionality.");
 	return InputControl;
 }
 
@@ -240,5 +273,13 @@ int SetResultsFile(ResultsStruct* results)
 	std::string s(RESULTS_FILE);
 	std::cin >> s;
 	RESULTS_FILE = s;
+	return 0;
+}
+int SetFindOptimalWorkGroupSize(ResultsStruct* results)
+{
+	std::cout << "Enter 1 to find optimal local work group size (currently " << FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE << "): ";
+	unsigned int i = (unsigned int)FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE;
+	std::cin >> i;
+	FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE = (i == 1);
 	return 0;
 }

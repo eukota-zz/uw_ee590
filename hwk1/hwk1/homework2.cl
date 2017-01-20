@@ -61,7 +61,7 @@ __kernel void CrossProduct_Manual(__global float4* pA, __global float4* pB, __gl
 { 
 	int idx = get_global_id(0);
 	pC[idx].x =      (pA[idx].y*pB[idx].z - pA[idx].z*pB[idx].y);
-	pC[idx].y = -1.0*(pA[idx].x*pB[idx].z - pA[idx].z*pB[idx].x);
+	pC[idx].y = -1.0f*(pA[idx].x*pB[idx].z - pA[idx].z*pB[idx].x);
 	pC[idx].z =      (pA[idx].x*pB[idx].y - pA[idx].y*pB[idx].x);
 	// ignore w
 }

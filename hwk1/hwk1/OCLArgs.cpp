@@ -4,6 +4,8 @@
 #include "enums.h"
 #include <vector>
 #include <iostream>
+#include <algorithm>
+#include "ProblemGroups.h"
 
 // Macros for OpenCL versions
 #define OPENCL_VERSION_1_2  1.2f
@@ -347,33 +349,53 @@ int ocl_args_d_t::GetPlatformAndDeviceVersion(cl_platform_id platformId)
 // Execute the Kernel
 // @param[in] globalWorkSize size_t array of passed in constants to use
 // @param[in] workSizeCount size of the globalWorkSize array
-cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount)
+cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize)
 {
 	cl_int err = CL_SUCCESS;
-
-	// execute kernel
-	err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, NULL, globalWorkSize, NULL, 0, NULL, &prof_event);
-	if (CL_SUCCESS != err)
+	size_t currentSize = FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE ? 2 : 256;
+	ResultsList resultsList;
+	for (size_t i = currentSize; i <= 256; i *= 2)
 	{
-		LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
-		return err;
-	}
+		localWorkSize = &i;
+		ResultsStruct* result = new ResultsStruct();
 
-	// Wait until the queued kernel is completed by the device
-	err = clFinish(this->commandQueue);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clFinish return %s\n", TranslateOpenCLError(err));
-		return err;
-	}
+		// execute kernel
+		err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, localWorkSize, globalWorkSize, NULL, 0, NULL, &prof_event);
+		if (CL_SUCCESS != err)
+		{
+			LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
+			return err;
+		}
 
-	// Update internal OpenCL Profiler
-	err = UpdateProfiler();
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
-		return err;
+		// Wait until the queued kernel is completed by the device
+		err = clFinish(this->commandQueue);
+		if (CL_SUCCESS != err)
+		{
+			LogError("Error: clFinish return %s\n", TranslateOpenCLError(err));
+			return err;
+		}
+
+		// Update internal OpenCL Profiler
+		err = UpdateProfiler();
+		if (CL_SUCCESS != err)
+		{
+			LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
+			return err;
+		}
+		if (FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE)
+		{
+			result->Annotation = "Finding Optimal Local Work Item Size";
+			result->OpenCLRunTime = RunTimeMS();
+			result->HasOpenCLRunTime = true;
+			result->WorkGroupSize = i;
+			resultsList.push_back(result);
+		}
 	}
+	const std::string oldFile = RESULTS_FILE;
+	RESULTS_FILE = "best_time.txt";
+	PrintWorkGroupResultsToFile(resultsList);
+	RESULTS_FILE = oldFile;
+
 	return CL_SUCCESS;
 }
 
