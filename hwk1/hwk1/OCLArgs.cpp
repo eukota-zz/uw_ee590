@@ -96,7 +96,14 @@ ocl_args_d_t::~ocl_args_d_t()
 			LogError("Error: clReleaseContext returned '%s'.\n", TranslateOpenCLError(err));
 		}
 	}
-
+	if (prof_event)
+	{
+		err = clReleaseEvent(prof_event);
+		if (CL_SUCCESS != err)
+		{
+			LogError("Error: clReleaseEvent returned '%s'.\n", TranslateOpenCLError(err));
+		}
+	}
 	/*
 	* Note there is no procedure to deallocate platform
 	* because it was not created at the startup,
