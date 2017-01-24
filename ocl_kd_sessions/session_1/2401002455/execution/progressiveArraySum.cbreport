@@ -1,0 +1,104 @@
+Start:Gx,Gy,Gz,Lx,Ly,Lz,Measurement,Total,Queue,Submit,Execution
+32,0,0,0,0,0,Average,1.87493,0.175082,1.49749,0.022333
+32,0,0,0,0,0,Median,1.87493,0.175082,1.49749,0.022333
+32,0,0,0,0,0,Standard Deviation,0,0,0,0
+32,0,0,0,0,0,Minimum,1.87493,0.175082,1.49749,0.022333
+32,0,0,0,0,0,Maximum,1.87493,0.175082,1.49749,0.022333
+32,0,0,1,0,0,Average,0.39278,0.011583,0.236416,0.022333
+32,0,0,1,0,0,Median,0.39278,0.011583,0.236416,0.022333
+32,0,0,1,0,0,Standard Deviation,0,0,0,0
+32,0,0,1,0,0,Minimum,0.39278,0.011583,0.236416,0.022333
+32,0,0,1,0,0,Maximum,0.39278,0.011583,0.236416,0.022333
+32,0,0,2,0,0,Average,0.40262,0.011833,0.243749,0.02225
+32,0,0,2,0,0,Median,0.40262,0.011833,0.243749,0.02225
+32,0,0,2,0,0,Standard Deviation,0,0,0,0
+32,0,0,2,0,0,Minimum,0.40262,0.011833,0.243749,0.02225
+32,0,0,2,0,0,Maximum,0.40262,0.011833,0.243749,0.02225
+32,0,0,4,0,0,Average,0.42394,0.011999,0.270999,0.022584
+32,0,0,4,0,0,Median,0.42394,0.011999,0.270999,0.022584
+32,0,0,4,0,0,Standard Deviation,0,0,0,0
+32,0,0,4,0,0,Minimum,0.42394,0.011999,0.270999,0.022584
+32,0,0,4,0,0,Maximum,0.42394,0.011999,0.270999,0.022584
+32,0,0,8,0,0,Average,0.44034,0.010083,0.251082,0.0215
+32,0,0,8,0,0,Median,0.44034,0.010083,0.251082,0.0215
+32,0,0,8,0,0,Standard Deviation,0,0,0,0
+32,0,0,8,0,0,Minimum,0.44034,0.010083,0.251082,0.0215
+32,0,0,8,0,0,Maximum,0.44034,0.010083,0.251082,0.0215
+32,0,0,16,0,0,Average,0.38048,0.010749,0.234,0.021583
+32,0,0,16,0,0,Median,0.38048,0.010749,0.234,0.021583
+32,0,0,16,0,0,Standard Deviation,0,0,0,0
+32,0,0,16,0,0,Minimum,0.38048,0.010749,0.234,0.021583
+32,0,0,16,0,0,Maximum,0.38048,0.010749,0.234,0.021583
+32,0,0,32,0,0,Average,0.44608,0.010583,0.233749,0.035833
+32,0,0,32,0,0,Median,0.44608,0.010583,0.233749,0.035833
+32,0,0,32,0,0,Standard Deviation,0,0,0,0
+32,0,0,32,0,0,Minimum,0.44608,0.010583,0.233749,0.035833
+32,0,0,32,0,0,Maximum,0.44608,0.010583,0.233749,0.035833
+Start:Gx,Gy,Gz,Lx,Ly,Lz,Iteration #,Total,Queue,Submit,Execution
+32,0,0,0,0,0,0,1.87493,0.175082,1.49749,0.022333
+32,0,0,1,0,0,0,0.39278,0.011583,0.236416,0.022333
+32,0,0,2,0,0,0,0.40262,0.011833,0.243749,0.02225
+32,0,0,4,0,0,0,0.42394,0.011999,0.270999,0.022584
+32,0,0,8,0,0,0,0.44034,0.010083,0.251082,0.0215
+32,0,0,16,0,0,0,0.38048,0.010749,0.234,0.021583
+32,0,0,32,0,0,0,0.44608,0.010583,0.233749,0.035833
+Start:Gx,Gy,Gz,Lx,Ly,Lz,Name,Read Time,Read Back Time,Input/Output Data
+32,0,0,0,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,0,0,0,buffer_1b_B,0.05576,19.5103,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_0.dat,float*,32,1
+32,0,0,1,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,1,0,0,buffer_1b_B,0.05576,10.3275,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_1.dat,float*,32,1
+32,0,0,2,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,2,0,0,buffer_1b_B,0.05576,16.2278,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_2.dat,float*,32,1
+32,0,0,4,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,4,0,0,buffer_1b_B,0.05576,10.9581,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_4.dat,float*,32,1
+32,0,0,8,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,8,0,0,buffer_1b_B,0.05576,11.0114,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_8.dat,float*,32,1
+32,0,0,16,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,16,0,0,buffer_1b_B,0.05576,15.6604,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_16.dat,float*,32,1
+32,0,0,32,0,0,buffer_1b_A,0.06642,0,U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin,float*,32,1
+32,0,0,32,0,0,buffer_1b_B,0.05576,7.1914,U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455\execution/p1b_B_config_0_32_32.dat,float*,32,1
+Start:Best,Median
+32,0,0,16,0,0,0.38048
+Start:Worst,Median
+32,0,0,0,0,0,1.87493
+Start:Analysis configuraion
+(local) EE-361PC18;Intel(R) OpenCL;GPU: Intel(R) HD Graphics 530;true;-cl-std=CL2.0
+Start:Report summary
+32;0;0;Auto;0;0;1
+progressiveArraySum#p1b_A&0&buffer_1b_A;p1b_B&0&buffer_1b_B
+Start:Analysis code
+__kernel void elementwiseMatrixPower(__global float* pA, unsigned int K, __global float* pB)
+{
+    const int x     = get_global_id(0);
+    const int y     = get_global_id(1);
+    const int width = get_global_size(0);
+
+    const int id = y * width + x;
+	pB[id] = pow(pA[id],K);
+}
+
+__kernel void elementwiseMatrixPower_Manual(__global float* pA, unsigned int K, __global float* pB)
+{
+    const int x     = get_global_id(0);
+    const int y     = get_global_id(1);
+    const int width = get_global_size(0);
+
+    const int id = y * width + x;
+	float prod = pA[id];
+	float out = 1.0;
+	for(unsigned int i=0; i<K; i++)
+		out = out*prod;
+	pB[id] = out;
+}
+
+__kernel void progressiveArraySum(__global float* p1b_A, __global float* p1b_B)
+{
+	const unsigned int id = get_global_id(0);
+
+	float out = 0.0;
+	for(unsigned int i=0; i<=id; i++)
+		out += p1b_A[i];
+
+	p1b_B[id] = out;
+}
+

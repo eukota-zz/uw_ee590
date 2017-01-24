@@ -1,0 +1,68 @@
+.occupancyGraphContainer {
+	/*position: relative;*/
+	height: 400px;
+	width: 100%;
+	/*overflow-x: hidden;*/
+}
+
+.occupancyGraphOverlayTracker1{
+    position: absolute;
+	color: gray;
+	font-size: 12px;
+}
+
+
+
+/* latency */
+.linesTableContainer {
+    position: relative;
+    margin-bottom: 0px;
+    margin-top: 2px;
+    width: 100%;
+}
+
+.srcCodeView {
+    width: 100%;
+    /*height: calculated in javascript */
+    position: relative;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    min-height: 250px;
+    overflow: hidden;
+    overflow-y: visible;
+    border:2px solid #ccc;
+	font-size: 15px;
+}
+
+.highlighterLine .highlighted{
+	background-color: #ffff99 !important;
+}
+
+td.linkableSrcCode {
+    color: #0071C5;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/*.latencyTable thead th{
+    text-align: left;
+    padding-left: 5px;
+}*/
+
+.editKernelButton {
+	background: green;
+	color: white;
+	font-size: 14px;
+	/*font-weight: 500;*/
+	-moz-border-radius:0px;
+    -webkit-border-radius:0px;
+    border-radius:5px;
+    /*border-style: solid;
+    border-color: #cccccc;
+    border-width: 1px;*/
+	display: inline-block;
+	margin-left: 10px;
+	padding: 2px 10px;
+
+}
+
