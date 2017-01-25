@@ -17,6 +17,7 @@
 #include "enums.h"
 #include "homework1.h"
 #include "homework2.h"
+#include "homework3.h"
 #include "ProblemGroups.h"
 
 //for perf. counters
@@ -29,6 +30,7 @@ void PrintInstructions()
 	cout << endl << "MAIN MENU:" << endl
 		<< "// 1 --> Homework 1 //" << endl
 		<< "// 2 --> Homework 2 //" << endl
+		<< "// 3 --> Homework 3 //" << endl
 		<< "// Q --> Quit       //" << endl
 		<< endl;
 }
@@ -52,6 +54,11 @@ int _tmain(int argc, TCHAR* argv[])
 		{
 			HWK2Class hwk2c;
 			res = hwk2c.Run();
+		}
+		if (input == "3")
+		{
+			HWK3Class hwk3c;
+			res = hwk3c.Run();
 		}
 		if (input == "Q" || input == "q")
 		{

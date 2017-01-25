@@ -2,90 +2,12 @@
 <!--  Kernel Builder Variables Database  -->
 <KernelBuilderBuffers>
     <BufferDetails>
-        <Name>buffer_1a_A</Name>
+        <Name>buf_4096x1_1_inc_in</Name>
         <DataType>float</DataType>
         <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
         <AccessQualifier>READ_ONLY</AccessQualifier>
         <I_O_Mode>0</I_O_Mode>
-        <Source>U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1a_A.bin</Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>32</BufferSize>
-        <InitByRandom>false</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_1a_B</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_ALLOC_HOST_PTR,CL_MEM_READ_WRITE</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>1</I_O_Mode>
         <Source></Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>32</BufferSize>
-        <InitByRandom>false</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_1b_A</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>0</I_O_Mode>
-        <Source>U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_1b_A.bin</Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>32</BufferSize>
-        <InitByRandom>false</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_1b_B</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>1</I_O_Mode>
-        <Source></Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>32</BufferSize>
-        <InitByRandom>false</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_2a_A</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>0</I_O_Mode>
-        <Source>U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_2a_A.bin</Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>262144</BufferSize>
-        <InitByRandom>true</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_2a_B</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>1</I_O_Mode>
-        <Source></Source>
-        <ReadOutput>true</ReadOutput>
-        <BufferSize>262144</BufferSize>
-        <InitByRandom>false</InitByRandom>
-        <InitByZero>false</InitByZero>
-        <UseAsSVM>false</UseAsSVM>
-    </BufferDetails>
-    <BufferDetails>
-        <Name>buffer_2a_C</Name>
-        <DataType>float</DataType>
-        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
-        <AccessQualifier>READ_ONLY</AccessQualifier>
-        <I_O_Mode>0</I_O_Mode>
-        <Source>U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buffer_2a_C.bin</Source>
         <ReadOutput>true</ReadOutput>
         <BufferSize>4096</BufferSize>
         <InitByRandom>true</InitByRandom>
@@ -93,7 +15,7 @@
         <UseAsSVM>false</UseAsSVM>
     </BufferDetails>
     <BufferDetails>
-        <Name>buffer_2a_D</Name>
+        <Name>buf_4096x1_1_inc_out</Name>
         <DataType>float</DataType>
         <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
         <AccessQualifier>READ_ONLY</AccessQualifier>
@@ -101,6 +23,32 @@
         <Source></Source>
         <ReadOutput>true</ReadOutput>
         <BufferSize>4096</BufferSize>
+        <InitByRandom>false</InitByRandom>
+        <InitByZero>false</InitByZero>
+        <UseAsSVM>false</UseAsSVM>
+    </BufferDetails>
+    <BufferDetails>
+        <Name>buf_512x512_small_inc</Name>
+        <DataType>float</DataType>
+        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
+        <AccessQualifier>READ_ONLY</AccessQualifier>
+        <I_O_Mode>0</I_O_Mode>
+        <Source>U:\EE590\github_repo\ocl_kd_sessions\session_1\bin_buf_512x512_small_inc.bin</Source>
+        <ReadOutput>true</ReadOutput>
+        <BufferSize>262144</BufferSize>
+        <InitByRandom>false</InitByRandom>
+        <InitByZero>false</InitByZero>
+        <UseAsSVM>false</UseAsSVM>
+    </BufferDetails>
+    <BufferDetails>
+        <Name>buf_512x512_small_inc_out</Name>
+        <DataType>float</DataType>
+        <MemoryFlags>CL_MEM_USE_HOST_PTR</MemoryFlags>
+        <AccessQualifier>READ_ONLY</AccessQualifier>
+        <I_O_Mode>1</I_O_Mode>
+        <Source></Source>
+        <ReadOutput>true</ReadOutput>
+        <BufferSize>262144</BufferSize>
         <InitByRandom>false</InitByRandom>
         <InitByZero>false</InitByZero>
         <UseAsSVM>false</UseAsSVM>

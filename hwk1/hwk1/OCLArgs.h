@@ -38,8 +38,12 @@ struct ocl_args_d_t
 	int CreateAndBuildProgram(const std::string& filename);
 	int GetPlatformAndDeviceVersion(cl_platform_id platformId);
 	cl_uint ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize = NULL);
+	cl_uint ExecuteKernel3D(size_t *globalWorkSize, size_t* localWorkSize);
+	cl_uint ExecuteKernel2D(size_t *globalWorkSize, size_t* localWorkSize);
+	cl_uint ExecuteKernel1D(size_t *globalWorkSize, size_t* localWorkSize);
 };
 
+cl_uint SetKernelArgument(cl_kernel* kernel, cl_uint* mem, unsigned int argNum);
 cl_uint SetKernelArgument(cl_kernel* kernel, cl_mem* mem, unsigned int argNum);
 
 int CreateReadBufferArg(cl_context *context, cl_mem* mem, cl_float* input, cl_uint arrayWidth, cl_uint arrayHeight);

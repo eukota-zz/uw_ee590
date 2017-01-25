@@ -186,6 +186,7 @@
     <ClCompile Include="enums.cpp" />
     <ClCompile Include="homework1.cpp" />
     <ClCompile Include="homework2.cpp" />
+    <ClCompile Include="homework3.cpp" />
     <ClCompile Include="OCLArgs.cpp" />
     <ClCompile Include="ProblemGroups.cpp" />
     <ClCompile Include="profiler.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="enums.h" />
     <ClInclude Include="homework1.h" />
     <ClInclude Include="homework2.h" />
+    <ClInclude Include="homework3.h" />
     <ClInclude Include="OCLArgs.h" />
     <ClInclude Include="ProblemGroups.h" />
     <ClInclude Include="tools.h" />
@@ -209,6 +211,7 @@
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="arithmetic.cl" />
     <Intel_OpenCL_Build_Rules Include="homework2.cl" />
+    <Intel_OpenCL_Build_Rules Include="homework3.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
