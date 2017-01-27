@@ -7,7 +7,11 @@ __kernel void elementwiseMatrixPower(__global float* pA, unsigned int K, __globa
     const int width = get_global_size(0);
 
     const int id = y * width + x;
-	pB[id] = pow(pA[id],K);
+	
+	// using local variables guarantees as little read and write access to shared memory as possible
+	float input = pA[id];
+	float output = pow(input, K);
+	pB[id] = output;
 }
 
 __kernel void elementwiseMatrixPower_Manual(__global float* pA, unsigned int K, __global float* pB)

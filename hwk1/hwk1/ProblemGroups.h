@@ -16,7 +16,7 @@ struct ResultsStruct
 	bool HasWindowsRunTime;
 	bool HasOpenCLRunTime;
 	std::string Annotation;
-	size_t WorkGroupSize;
+	size_t WorkGroupSize[3];
 };
 
 // For use when sorting results lists

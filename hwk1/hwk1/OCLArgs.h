@@ -27,6 +27,7 @@ struct ocl_args_d_t
 	float            platformVersion;   // hold the OpenCL platform version (default 1.2)
 	float            deviceVersion;     // hold the OpenCL device version (default. 1.2)
 	float            compilerVersion;   // hold the device OpenCL C version (default. 1.2)
+	size_t			 max_work_group_size; 
 
 	// OpenCL Event Profiler
 	cl_event prof_event;
@@ -38,9 +39,10 @@ struct ocl_args_d_t
 	int CreateAndBuildProgram(const std::string& filename);
 	int GetPlatformAndDeviceVersion(cl_platform_id platformId);
 	cl_uint ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize = NULL);
-	cl_uint ExecuteKernel3D(size_t *globalWorkSize, size_t* localWorkSize);
-	cl_uint ExecuteKernel2D(size_t *globalWorkSize, size_t* localWorkSize);
-	cl_uint ExecuteKernel1D(size_t *globalWorkSize, size_t* localWorkSize);
+
+private:
+	cl_uint helper_ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize = NULL);
+
 };
 
 cl_uint SetKernelArgument(cl_kernel* kernel, cl_uint* mem, unsigned int argNum);

@@ -101,8 +101,8 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
-	size_t localWorkSize[2] = { 8, 4 };
-	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 2, localWorkSize))
+//	size_t localWorkSize[2] = { 8, 4 };
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 2))
 		return -1;
 	profiler.Stop();
 	float runTime = profiler.Log();
@@ -259,8 +259,8 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[1] = { arrayWidth };
-	size_t localWorkSize[1] = { 256 };
-	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1, localWorkSize))
+//	size_t localWorkSize[1] = { 256 };
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1))
 		return -1;
 	profiler.Stop();
 	float runTime = profiler.Log();

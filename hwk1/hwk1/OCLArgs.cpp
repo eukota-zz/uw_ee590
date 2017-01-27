@@ -191,6 +191,21 @@ int ocl_args_d_t::SetupOpenCL(cl_device_type deviceType)
 		return err;
 	}
 
+	// Get Max Compute
+	size_t maxSizeSize;
+	err = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, NULL, NULL, &maxSizeSize);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clGetDeviceInfo() returned %s.\n", TranslateOpenCLError(err));
+		return err;
+	}
+	err = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, maxSizeSize, &max_work_group_size, NULL);
+	if (CL_SUCCESS != err)
+	{
+		LogError("Error: clGetDeviceInfo() returned %s.\n", TranslateOpenCLError(err));
+		return err;
+	}
+
 	return CL_SUCCESS;
 }
 
@@ -349,10 +364,10 @@ int ocl_args_d_t::GetPlatformAndDeviceVersion(cl_platform_id platformId)
 // Execute the Kernel
 // @param[in] globalWorkSize size_t array of passed in constants to use
 // @param[in] workSizeCount size of the globalWorkSize array
-cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize)
-{
+cl_uint ocl_args_d_t::helper_ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize)
+{	
 	cl_int err = CL_SUCCESS;
-
+	
 	// execute kernel
 	err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, 0, globalWorkSize, localWorkSize, 0, NULL, &prof_event);
 	if (CL_SUCCESS != err)
@@ -376,141 +391,61 @@ cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCoun
 		LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
 		return err;
 	}
-	return CL_SUCCESS;
-}
-
-// @param[in] localWorkSize MUST be a 3 by (eg: {0,0,0})
-cl_uint ocl_args_d_t::ExecuteKernel3D(size_t *globalWorkSize, size_t* localWorkSize)
-{
-	const cl_uint workSizeCount = 3;
-	cl_int err = CL_SUCCESS;
-	size_t currentSize = FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE ? 2 : 256;
-	ResultsList resultsList;
-	
-
-//	for (size_t i = currentSize; i <= 256; i *= 2)
-//	{
-	
-	ResultsStruct* result = new ResultsStruct();
-
-	// execute kernel
-	err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, 0, globalWorkSize, localWorkSize, 0, NULL, &prof_event);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-
-	// Wait until the queued kernel is completed by the device
-	err = clFinish(this->commandQueue);
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clFinish return %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-
-	// Update internal OpenCL Profiler
-	err = UpdateProfiler();
-	if (CL_SUCCESS != err)
-	{
-		LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
-		return err;
-	}
-/*
-		if (FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE)
-		{
-			result->Annotation = "Finding Optimal Local Work Item Size";
-			result->OpenCLRunTime = RunTimeMS();
-			result->HasOpenCLRunTime = true;
-			result->WorkGroupSize = i;
-			resultsList.push_back(result);
-		}
-	}
-	const std::string oldFile = RESULTS_FILE;
-	RESULTS_FILE = "best_time.txt";
-	PrintWorkGroupResultsToFile(resultsList);
-	RESULTS_FILE = oldFile;
-*/
-
-	return CL_SUCCESS;
-}
-
-// @param[in] localWorkSize MUST be a 2 by (eg: {0,0})
-cl_uint ocl_args_d_t::ExecuteKernel2D(size_t *globalWorkSize, size_t* localWorkSize)
-{
-	const cl_uint workSizeCount = 2;
-	cl_int err = CL_SUCCESS;
-//	size_t currentSize = FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE ? 2 : 256;
-//	ResultsList resultsList;
-
-
-	//for (size_t i = currentSize; i <= 256; i *= 2)
-	//{
-		ResultsStruct* result = new ResultsStruct();
-
-		// execute kernel
-		err = clEnqueueNDRangeKernel(this->commandQueue, this->kernel, workSizeCount, 0, globalWorkSize, localWorkSize, 0, NULL, &prof_event);
-		if (CL_SUCCESS != err)
-		{
-			LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
-			return err;
-		}
-
-		// Wait until the queued kernel is completed by the device
-		err = clFinish(this->commandQueue);
-		if (CL_SUCCESS != err)
-		{
-			LogError("Error: clFinish return %s\n", TranslateOpenCLError(err));
-			return err;
-		}
-
-		// Update internal OpenCL Profiler
-		err = UpdateProfiler();
-		if (CL_SUCCESS != err)
-		{
-			LogError("Error: clWaitForEvents return %s\n", TranslateOpenCLError(err));
-			return err;
-		}
-
-/*		if (FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE)
-		{
-			result->Annotation = "Finding Optimal Local Work Item Size";
-			result->OpenCLRunTime = RunTimeMS();
-			result->HasOpenCLRunTime = true;
-			result->WorkGroupSize = i;
-			resultsList.push_back(result);
-		}
-	}
-	const std::string oldFile = RESULTS_FILE;
-	RESULTS_FILE = "best_time.txt";
-	PrintWorkGroupResultsToFile(resultsList);
-	RESULTS_FILE = oldFile;
-*/
-
 	return CL_SUCCESS;
 }
 
 // @param[in] localWorkSize MUST be a 1 by (eg: {0})
-cl_uint ocl_args_d_t::ExecuteKernel1D(size_t *globalWorkSize, size_t* localWorkSize)
+cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize)
 {
-	const cl_uint workSizeCount = 1;
 	cl_int err = CL_SUCCESS;
-	size_t currentSize = FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE ? 2 : 256;
-	ResultsList resultsList;
-
-	for (size_t i = currentSize; i <= 256; i *= 2)
-	{		
-		ResultsStruct* result = new ResultsStruct();
-
+	
+	// no workgroup size determination
+	if (!FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE || localWorkSize)
+	{
 		err = ExecuteKernel(globalWorkSize, workSizeCount, localWorkSize);
+		if (CL_SUCCESS != err)
+			LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
+		return err;
+	}
 
-		if (FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE)
-		{
-			result->Annotation = "Finding Optimal Local Work Item Size";
-			result->OpenCLRunTime = RunTimeMS();
-			result->HasOpenCLRunTime = true;
-			result->WorkGroupSize = i;
-			resultsList.push_back(result);
+	// Test out all WorkGroupSizes
+	ResultsList resultsList;
+	const size_t iMin = 1;
+	const size_t iMax = max_work_group_size;
+	const size_t jMin = (workSizeCount == 1 ? 0 : 1);
+	const size_t jMax = (workSizeCount == 1 ? 0 : max_work_group_size);
+	const size_t kMin = (workSizeCount < 3 ? 0 : 1);
+	const size_t kMax = (workSizeCount < 3 ? 0 : max_work_group_size);
+	for (size_t i = iMin; i <= iMax; i=i*2)
+	{		
+		for (size_t j = jMin; j <= jMax; j=j*2)
+		{			
+			for (size_t k = kMin; k <= kMax; k=k*2)
+			{
+				if (i > max_work_group_size || i*j > max_work_group_size || i*j*k > max_work_group_size)
+					continue;
+				size_t workSize[3] = { i, j, k };
+				ResultsStruct* result = new ResultsStruct();
+				err = helper_ExecuteKernel(globalWorkSize, workSizeCount, workSize);
+				if (CL_SUCCESS != err)
+				{
+					LogError("Error: Failed to run kernel, return %s: (%d,%d,%d)\n", TranslateOpenCLError(err), workSize[0], workSize[1], workSize[2]);
+				}
+				else
+				{
+					result->Annotation = "Finding Optimal Local Work Item Size";
+					result->OpenCLRunTime = RunTimeMS();
+					result->HasOpenCLRunTime = true;
+					result->WorkGroupSize[0] = i;
+					result->WorkGroupSize[1] = j;
+					result->WorkGroupSize[2] = k;
+					resultsList.push_back(result);
+				}
+				if (k == 0)
+					k++;
+			}
+			if (j == 0)
+				j++;
 		}
 	}
 	const std::string oldFile = RESULTS_FILE;

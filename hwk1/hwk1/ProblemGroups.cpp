@@ -19,8 +19,10 @@ ResultsStruct::ResultsStruct()
 	, OpenCLRunTime(0.0)
 	, HasWindowsRunTime(false)
 	, HasOpenCLRunTime(false)
-	, WorkGroupSize(0)
 {
+	WorkGroupSize[0] = 0;
+	WorkGroupSize[1] = 0;
+	WorkGroupSize[2] = 0;
 }
 
 bool resultTimeOCL(ResultsStruct* A, ResultsStruct* B)
@@ -49,7 +51,7 @@ void PrintWorkGroupResultsToFile(const ResultsList& results)
 	}
 
 	double bestOpenCLTime = 100000;
-	size_t bestOpenCLWorkSize = 1;
+	size_t bestOpenCLWorkSize[3] = { 0,0,0 };
 	int num = 0;
 	outfile << results.front()->Annotation << std::endl;
 	outfile << "Run Number & WorkGroupSize & OpenCLTime\\\\hline\\hline" << std::endl;
@@ -58,11 +60,13 @@ void PrintWorkGroupResultsToFile(const ResultsList& results)
 		if ((*i)->OpenCLRunTime < bestOpenCLTime)
 		{
 			bestOpenCLTime = (*i)->OpenCLRunTime;
-			bestOpenCLWorkSize = (*i)->WorkGroupSize;
+			bestOpenCLWorkSize[0] = (*i)->WorkGroupSize[0];
+			bestOpenCLWorkSize[1] = (*i)->WorkGroupSize[1];
+			bestOpenCLWorkSize[2] = (*i)->WorkGroupSize[2];
 		}
-		outfile << num + 1 << " & " << (*i)->WorkGroupSize << " & " << (*i)->OpenCLRunTime << "\\\\" << std::endl;
+		outfile << num + 1 << " & (" << (*i)->WorkGroupSize[0] << "," << (*i)->WorkGroupSize[1] << "," << (*i)->WorkGroupSize[2] << ") & " << (*i)->OpenCLRunTime << "\\\\" << std::endl;
 	}
-	outfile << "Best Time: " << bestOpenCLTime << "; Work Group Size: " << bestOpenCLWorkSize << std::endl;
+	outfile << "Best Time: " << bestOpenCLTime << "; Work Group Size: (" << bestOpenCLWorkSize[0] << "," << bestOpenCLWorkSize[1] << "," << bestOpenCLWorkSize[2] << ")" << std::endl;
 }
 
 void PrintToFile(const ResultsList& results)
