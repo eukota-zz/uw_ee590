@@ -402,7 +402,7 @@ cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCoun
 	// no workgroup size determination
 	if (!FIND_OPTIMAL_LOCAL_WORKGROUP_SIZE || localWorkSize)
 	{
-		err = ExecuteKernel(globalWorkSize, workSizeCount, localWorkSize);
+		err = helper_ExecuteKernel(globalWorkSize, workSizeCount, localWorkSize);
 		if (CL_SUCCESS != err)
 			LogError("Error: Failed to run kernel, return %s\n", TranslateOpenCLError(err));
 		return err;
