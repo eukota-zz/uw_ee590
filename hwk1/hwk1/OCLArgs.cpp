@@ -423,7 +423,11 @@ cl_uint ocl_args_d_t::ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCoun
 			for (size_t k = kMin; k <= kMax; k=k*2)
 			{
 				if (i > max_work_group_size || i*j > max_work_group_size || i*j*k > max_work_group_size)
+				{
+					if (k == 0)
+						k++;
 					continue;
+				}
 				size_t workSize[3] = { i, j, k };
 				ResultsStruct* result = new ResultsStruct();
 				err = helper_ExecuteKernel(globalWorkSize, workSizeCount, workSize);
