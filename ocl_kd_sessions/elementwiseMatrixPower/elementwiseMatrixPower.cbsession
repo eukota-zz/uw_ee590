@@ -1,0 +1,38 @@
+[General]
+ActiveTab=elementwiseMatrixPower
+
+[KBSession]
+KBTabs\2\TabFile=elementwiseMatrixPower
+KBTabs\2\TabName=elementwiseMatrixPower
+KBTabs\2\KBCache=
+KBTabs\2\KBVarsByKernel=
+KBTabs\2\KBRefsByKernel=
+KBTabs\2\KBGroupSizes=
+KBTabs\2\KBIterations=
+KBTabs\2\KBConfigurationNames=
+KBTabs\2\KBWorkFlows=
+KBTabs\2\KBWorkFlowsSetting=
+KBTabs\2\KBSelectedKernel=
+KBTabs\2\TabCode=
+KBTabs\2\KBFacadeVisible=true
+KBTabs\2\IsValidation=false
+KBTabs\2\KBServerActive=false
+KBTabs\2\Artifacts=
+KBTabs\2\Reports=
+KBTabs\2\CLFiles=D:\\Development\\uwEE590\\ocl_kd_sessions\\elementwiseMatrixPower\\program.cl
+KBTabs\2\IsBinary=false
+KBTabs\2\TabOpt6=
+KBTabs\2\TabOpt7=2
+KBTabs\2\TabOpt10=(local) DESKTOP-S64PBL4
+KBTabs\2\TabOpt17=Intel(R) OpenCL
+KBTabs\2\TabOpt18=GPU: Intel(R) HD Graphics 5500
+KBTabs\2\TabOpt1=true
+KBTabs\2\TabOpt3=false
+KBTabs\2\TabOpt9=Current Operating System
+KBTabs\2\TabOpt11=
+KBTabs\2\TabOpt4=false
+KBTabs\2\TabOpt13=5010
+KBTabs\2\TabOpt14=5999
+KBTabs\2\TabOpt15=true
+KBTabs\2\TabOpt16=20000
+KBTabs\size=2

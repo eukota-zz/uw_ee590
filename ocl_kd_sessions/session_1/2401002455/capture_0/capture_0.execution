@@ -1,292 +1,0 @@
-§ :
-Standard DeviationB-
-Minimumä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?J,
-Medianä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?R-
-Maximumä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?Z-
-Averageä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?b˜
-0ä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?2
-GpuTime236662
-AvgGpuCoreFrequencyMHz10472
-	CsThreads22
-EuActive0.2003012
-EuStall2.060142
-EuThreadOccupancy0.3145672
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput60162
-GtiWriteThroughput17282
-EuIdle97.7396je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557619.5103"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_0.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8©  :
-Standard DeviationB-
-MinimumÞv¡¹N#Ù?:<„ñÓ¸‡?!9% &áBÎ?)R||BvÞ–?J,
-MedianÞv¡¹N#Ù?:<„ñÓ¸‡?!9% &áBÎ?)R||BvÞ–?R-
-MaximumÞv¡¹N#Ù?:<„ñÓ¸‡?!9% &áBÎ?)R||BvÞ–?Z-
-AverageÞv¡¹N#Ù?:<„ñÓ¸‡?!9% &áBÎ?)R||BvÞ–?b˜
-0Þv¡¹N#Ù?:<„ñÓ¸‡?!9% &áBÎ?)R||BvÞ–?2
-GpuTime234162
-AvgGpuCoreFrequencyMHz10492
-	CsThreads322
-EuActive1.898392
-EuStall20.33992
-EuThreadOccupancy3.620832
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput57602
-GtiWriteThroughput120322
-EuIdle77.7617je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557610.3275"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_1.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8ª  :
-Standard DeviationB-
-MinimumË-­†ÄÙ?ŠÉ`æ;ˆ?!Øb·Ï*3Ï?)bX9´È–?J,
-MedianË-­†ÄÙ?ŠÉ`æ;ˆ?!Øb·Ï*3Ï?)bX9´È–?R-
-MaximumË-­†ÄÙ?ŠÉ`æ;ˆ?!Øb·Ï*3Ï?)bX9´È–?Z-
-AverageË-­†ÄÙ?ŠÉ`æ;ˆ?!Øb·Ï*3Ï?)bX9´È–?b™
-0Ë-­†ÄÙ?ŠÉ`æ;ˆ?!Øb·Ï*3Ï?)bX9´È–?2
-GpuTime235832
-AvgGpuCoreFrequencyMHz10462
-	CsThreads162
-EuActive0.9993792
-EuStall13.53552
-EuThreadOccupancy2.041972
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput58882
-GtiWriteThroughput120322
-EuIdle85.4651je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557616.2278"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_2.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8¨  :
-Standard DeviationB-
-MinimumàÖÝ<Õ!Û?Jy­„î’ˆ?!Äê0XÑ?)ÒÅ¦•B —?J,
-MedianàÖÝ<Õ!Û?Jy­„î’ˆ?!Äê0XÑ?)ÒÅ¦•B —?R-
-MaximumàÖÝ<Õ!Û?Jy­„î’ˆ?!Äê0XÑ?)ÒÅ¦•B —?Z-
-AverageàÖÝ<Õ!Û?Jy­„î’ˆ?!Äê0XÑ?)ÒÅ¦•B —?b—
-0àÖÝ<Õ!Û?Jy­„î’ˆ?!Äê0XÑ?)ÒÅ¦•B —?2
-GpuTime239162
-AvgGpuCoreFrequencyMHz10462
-	CsThreads82
-EuActive0.5178792
-EuStall6.88422
-EuThreadOccupancy1.038422
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput60162
-GtiWriteThroughput120322
-EuIdle92.5979je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557610.9581"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_4.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8ª  :
-Standard DeviationB-
-Minimum‘¸ÇÒ‡.Ü?[ìöYe¦„?!<P§<ºÐ?)j¼t“–?J,
-Median‘¸ÇÒ‡.Ü?[ìöYe¦„?!<P§<ºÐ?)j¼t“–?R-
-Maximum‘¸ÇÒ‡.Ü?[ìöYe¦„?!<P§<ºÐ?)j¼t“–?Z-
-Average‘¸ÇÒ‡.Ü?[ìöYe¦„?!<P§<ºÐ?)j¼t“–?b™
-0‘¸ÇÒ‡.Ü?[ìöYe¦„?!<P§<ºÐ?)j¼t“–?2
-GpuTime227502
-AvgGpuCoreFrequencyMHz10442
-	CsThreads42
-EuActive0.2994352
-EuStall3.553072
-EuThreadOccupancy0.5385622
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput55682
-GtiWriteThroughput120322
-EuIdle96.1475je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557611.0114"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_8.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8«  :
-Standard DeviationB-
-Minimum™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?J,
-Median™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?R-
-Maximum™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?Z-
-Average™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?b™
-0™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?2
-GpuTime228332
-AvgGpuCoreFrequencyMHz10462
-	CsThreads22
-EuActive0.2078452
-EuStall1.944892
-EuThreadOccupancy0.2971212
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput56962
-GtiWriteThroughput120322
-EuIdle97.8473je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÐ
-buffer_1b_B0.0557615.6604"\U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_16.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8©   :
-Standard DeviationB-
-Minimum[”Ù “ŒÜ?û&7Š¬…?!‘<»|ëÍ?)ß1<ö³X¢?J,
-Median[”Ù “ŒÜ?û&7Š¬…?!‘<»|ëÍ?)ß1<ö³X¢?R-
-Maximum[”Ù “ŒÜ?û&7Š¬…?!‘<»|ëÍ?)ß1<ö³X¢?Z-
-Average[”Ù “ŒÜ?û&7Š¬…?!‘<»|ëÍ?)ß1<ö³X¢?b˜
-0[”Ù “ŒÜ?û&7Š¬…?!‘<»|ëÍ?)ß1<ö³X¢?2
-GpuTime369162
-AvgGpuCoreFrequencyMHz8102
-	CsThreads22
-EuActive0.1659092
-EuStall3.317632
-EuThreadOccupancy0.4910482
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput56962
-GtiWriteThroughput120962
-EuIdle96.5165je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.055767.1914"\U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_32.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8«  :
-Standard DeviationB-
-Minimum™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?J,
-Median™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?R-
-Maximum™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?Z-
-Average™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?b™
-0™2ÉÈYØ?»¶·[’†?!ÁÊ¡E¶óÍ?)[(™œÚ–?2
-GpuTime228332
-AvgGpuCoreFrequencyMHz10462
-	CsThreads22
-EuActive0.2078452
-EuStall1.944892
-EuThreadOccupancy0.2971212
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput56962
-GtiWriteThroughput120322
-EuIdle97.8473je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÐ
-buffer_1b_B0.0557615.6604"\U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_16.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8"§ :
-Standard DeviationB-
-Minimumä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?J,
-Medianä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?R-
-Maximumä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?Z-
-Averageä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?b˜
-0ä „™¶ÿý?‰#DiÆ?!„d¸õ÷?)R||BvÞ–?2
-GpuTime236662
-AvgGpuCoreFrequencyMHz10472
-	CsThreads22
-EuActive0.2003012
-EuStall2.060142
-EuThreadOccupancy0.3145672
-SamplesWritten02
-SlmBytesRead02
-SlmBytesWritten02
-TypedBytesRead02
-TypedBytesWritten02
-UntypedBytesRead02
-UntypedBytesWritten02
-GtiReadThroughput60162
-GtiWriteThroughput17282
-EuIdle97.7396je
-buffer_1b_A0.066420"BU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_buffer_1b_A.bin*float*jÏ
-buffer_1b_B0.0557619.5103"[U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/execution/p1b_B_config_0_32_0.dat*float*2GU:/EE590/github_repo/ocl_kd_sessions/session_1/bin_ref_buffer_1b_B0.bin8*è
-(local) EE-361PC18Intel(R) OpenCLGPU: Intel(R) HD Graphics 530 *-cl-std=CL2.0232:0B0JAutoR0Z0b1j
-p1b_Abuffer_1b_Aj
-p1b_Bbuffer_1b_BrË__kernel void elementwiseMatrixPower(__global float* pA, unsigned int K, __global float* pB)
-
-{
-
-    const int x     = get_global_id(0);
-
-    const int y     = get_global_id(1);
-
-    const int width = get_global_size(0);
-
-
-
-    const int id = y * width + x;
-
-	pB[id] = pow(pA[id],K);
-
-}
-
-
-
-__kernel void elementwiseMatrixPower_Manual(__global float* pA, unsigned int K, __global float* pB)
-
-{
-
-    const int x     = get_global_id(0);
-
-    const int y     = get_global_id(1);
-
-    const int width = get_global_size(0);
-
-
-
-    const int id = y * width + x;
-
-	float prod = pA[id];
-
-	float out = 1.0;
-
-	for(unsigned int i=0; i<K; i++)
-
-		out = out*prod;
-
-	pB[id] = out;
-
-}
-
-
-
-__kernel void progressiveArraySum(__global float* p1b_A, __global float* p1b_B)
-
-{
-
-	const unsigned int id = get_global_id(0);
-
-
-
-	float out = 0.0;
-
-	for(unsigned int i=0; i<=id; i++)
-
-		out += p1b_A[i];
-
-
-
-	p1b_B[id] = out;
-
-}
-
-
-2progressiveArraySum:config_0BBU:\EE590\github_repo\ocl_kd_sessions\session_1\session_1.cbsessionJ.U:\EE590\github_repo\ocl_kd_sessions\session_1R	session_1Z×
-   "24/01/17 00:24:55*[N/A]2"C:\Program Files (x86)\Intel\OpenCL SDK\6.1\bin/x86\CodeBuilder.exe" analyze-session -s "U:/EE590/github_repo/ocl_kd_sessions/session_1/session_1.cbsession" -k "progressiveArraySum" -c "config_0" -o "U:/EE590/github_repo/ocl_kd_sessions/session_1/2401002455/manual_rerun"BprogressiveArraySum_2401002455J PbGpuTimebGpuCoreClocksbAvgGpuCoreFrequencyMHzbGpuBusyb	VsThreadsb	HsThreadsb	DsThreadsb	GsThreadsb	PsThreadsb	CsThreadsbEuActivebEuStallbEuAvgIpcRatebEuFpuBothActiveb
-Fpu0Activeb
-Fpu1ActivebEuSendActivebEuThreadOccupancybRasterizedPixelsbHiDepthTestFailsbEarlyDepthTestFailsbSamplesKilledInPsbPixelsFailingPostPsTestsbSamplesWrittenbSamplesBlendedbSamplerTexelsbSamplerTexelMissesbSlmBytesReadbSlmBytesWrittenbShaderMemoryAccessesbShaderAtomicsbL3ShaderThroughputbShaderBarriersbTypedBytesReadbTypedBytesWrittenbUntypedBytesReadbUntypedBytesWrittenbGtiReadThroughputbGtiWriteThroughputb bQueryBeginTimebCoreFrequencyMHzbCoreFrequencyChangedbQuerySplitOccurredb bEuIdleh

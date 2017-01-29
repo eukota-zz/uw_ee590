@@ -1,1 +1,0 @@
-{"overview": {"kernelName": "progressiveArraySum","confCount": 7,"iteration": 1,"bestConf": {"name": "G(32,0,0) - L(16,0,0)","median": "0.021583"},"worstConf": {"name": "G(32,0,0) - L(0,0,0)","median": "0.022333"}},"configurations": "progressiveArraySum_2401002455_Files/data/data2.ajax"}
