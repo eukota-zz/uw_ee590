@@ -37,6 +37,7 @@ ocl_args_d_t::ocl_args_d_t(cl_device_type deviceType)
 	, compilerVersion(OPENCL_VERSION_2_0)
 	, prof_event(NULL)
 	, run_time(0l)
+	, max_work_group_size(1)
 {
 	SetupOpenCL(deviceType);
 }
