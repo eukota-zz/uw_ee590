@@ -1,6 +1,8 @@
 #pragma once
 #include "ProblemGroups.h"
 
+extern bool USE_HARDCODED_LOCAL_WORKGROUP_SIZES;
+
 class HWK3Class : public GroupManager
 {
 public:
@@ -11,6 +13,9 @@ public:
 	std::map<int, ProblemGroup*> GroupFactory();
 
 };
+
+///// Local Setting /////
+int UseHardcodedLocalWorkgroupSizes(ResultsStruct* results);
 
 ///// MATRIX POWER //////
 int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelName);

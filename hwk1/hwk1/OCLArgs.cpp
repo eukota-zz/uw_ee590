@@ -364,7 +364,7 @@ int ocl_args_d_t::GetPlatformAndDeviceVersion(cl_platform_id platformId)
 
 // Execute the Kernel
 // @param[in] globalWorkSize size_t array of passed in constants to use
-// @param[in] workSizeCount size of the globalWorkSize array
+// @param[in] workSizeCount size of the globalWorkSize arraysize_t localWo
 cl_uint ocl_args_d_t::helper_ExecuteKernel(size_t *globalWorkSize, cl_uint workSizeCount, size_t* localWorkSize)
 {	
 	cl_int err = CL_SUCCESS;

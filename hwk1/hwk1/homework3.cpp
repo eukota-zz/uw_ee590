@@ -9,14 +9,17 @@
 #include <vector>
 #include <algorithm>
 
-/////////// HOMEWORK 2
+/////////// HOMEWORK 3
+bool USE_HARDCODED_LOCAL_WORKGROUP_SIZES = false;
+
 namespace
 {
 	const char* FILENAME = "homework3.cl";
+	size_t* HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
 }
 
 HWK3Class::HWK3Class()
-	: GroupManager("Homework 2")
+	: GroupManager("Homework 3")
 {
 	groups_ = GroupFactory();
 
@@ -31,6 +34,7 @@ std::map<int, ProblemGroup*> HWK3Class::GroupFactory()
 	std::map<int, ProblemGroup*> pgs;
 
 	ProblemGroup* InputControl = GroupManagerInputControlFactory();
+	InputControl->problems_[InputControl->problems_.size()+1] = new Problem(&UseHardcodedLocalWorkgroupSizes, "Use Hardcoded Local Workgroup Sizes");
 	pgs[InputControl->GroupNum()] = InputControl;
 
 	ProblemGroup* Homework3 = new ProblemGroup(1, "Homework 3");
@@ -44,6 +48,15 @@ std::map<int, ProblemGroup*> HWK3Class::GroupFactory()
 	return pgs;
 }
 
+///// Local Setting /////
+int UseHardcodedLocalWorkgroupSizes(ResultsStruct* results)
+{
+	std::cout << "Enter 1 to use hard coded work group sizes (currently " << USE_HARDCODED_LOCAL_WORKGROUP_SIZES << "): ";
+	unsigned int i = (unsigned int)USE_HARDCODED_LOCAL_WORKGROUP_SIZES;
+	std::cin >> i;
+	USE_HARDCODED_LOCAL_WORKGROUP_SIZES = (i == 1);
+	return 0;
+}
 
 ////////////////// MATRIX POWER /////////////////
 // Since MatrixPower and MatrixPower_Manual use identical input types, I use the exact same function call and just vary the KernelName
@@ -101,8 +114,7 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
-//	size_t localWorkSize[2] = { 8, 4 };
-	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 2))
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 2, HARDCODED_LOCAL_WORKGROUP_SIZE))
 		return -1;
 	profiler.Stop();
 	float runTime = profiler.Log();
@@ -163,11 +175,25 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 
 int exCL_MatrixPower(ResultsStruct* results)
 {
+	// hard code work group size after finding optimal solution with KDF Sessions
+	// pow: {8,4}
+	size_t localWorkSize[2] = { 8, 4 };
+	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
+		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
+	else
+		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
 	return exCL_MatrixPower_Helper(results, "elementwiseMatrixPower");
 }
 
 int exCL_MatrixPower_Manual(ResultsStruct* results)
 {
+	// hard code work group size after finding optimal solution with KDF Sessions
+	// manual: {128,2,0}
+	size_t localWorkSize[2] = { 128, 2 };
+	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
+		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
+	else
+		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
 	return exCL_MatrixPower_Helper(results, "elementwiseMatrixPower_Manual");
 }
 
@@ -259,8 +285,14 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[1] = { arrayWidth };
-//	size_t localWorkSize[1] = { 256 };
-	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1))
+	// hard code work group size after finding optimal solution with KDF Sessions
+	// progressive array sum: {64}
+	size_t localWorkSize[1] = { 64 };
+	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
+		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
+	else
+		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1, HARDCODED_LOCAL_WORKGROUP_SIZE))
 		return -1;
 	profiler.Stop();
 	float runTime = profiler.Log();
