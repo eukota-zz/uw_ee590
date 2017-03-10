@@ -51,6 +51,12 @@
     <ClCompile Include="homework3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="homework4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="project.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
@@ -86,6 +92,12 @@
     <ClInclude Include="homework3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="homework4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="project.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="arithmetic.cl">
@@ -95,6 +107,9 @@
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>
     <Intel_OpenCL_Build_Rules Include="homework3.cl">
+      <Filter>OpenCL Files</Filter>
+    </Intel_OpenCL_Build_Rules>
+    <Intel_OpenCL_Build_Rules Include="homework4.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>
   </ItemGroup>

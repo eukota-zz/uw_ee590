@@ -2,54 +2,49 @@
 #include "OCLArgs.h"
 #include "tools.h"
 #include "utils.h"
-#include "homework3.h"
+#include "homework4.h"
 #include "arithmetic.h"
 #include "enums.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
 
-/////////// HOMEWORK 3
-bool USE_HARDCODED_LOCAL_WORKGROUP_SIZES = false;
-
 namespace
 {
-	const char* FILENAME = "homework3.cl";
+	bool USE_HARDCODED_LOCAL_WORKGROUP_SIZES = false;
+	const char* FILENAME = "homework4.cl";
 	size_t* HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
 }
 
-HWK3Class::HWK3Class()
-	: GroupManager("Homework 3")
+HWK4Class::HWK4Class()
+	: GroupManager("Homework 4")
 {
 	groups_ = GroupFactory();
-
-	// Since all of Homework 3 calls for 4096, default it to that and notify user
-	GLOBAL_ARRAY_WIDTH = 4096;
-	printf("Default M value changed to %d\n", GLOBAL_ARRAY_WIDTH);
 }
 
 
-std::map<int, ProblemGroup*> HWK3Class::GroupFactory()
+std::map<int, ProblemGroup*> HWK4Class::GroupFactory()
 {
 	std::map<int, ProblemGroup*> pgs;
 
 	ProblemGroup* InputControl = GroupManagerInputControlFactory();
-	InputControl->problems_[InputControl->problems_.size()+1] = new Problem(&HWK3Class::UseHardcodedLocalWorkgroupSizes, "Use Hardcoded Local Workgroup Sizes");
+	InputControl->problems_[InputControl->problems_.size() + 1] = new Problem(&HWK4Class::UseHardcodedLocalWorkgroupSizes, "Use Hardcoded Local Workgroup Sizes");
 	pgs[InputControl->GroupNum()] = InputControl;
 
-	ProblemGroup* Homework3 = new ProblemGroup(1, "Homework 3");
+	ProblemGroup* Homework4 = new ProblemGroup(1, "Homework 4");
 	int num = 0;
-	Homework3->problems_[++num] = new Problem(&exCL_MatrixPower, "Matrix Power: OpenCL");
-	Homework3->problems_[++num] = new Problem(&exCL_MatrixPower_Manual, "Matrix Power Manual: OpenCL");
-	Homework3->problems_[++num] = new Problem(&exSequential_MatrixPower, "Matrix Power: Sequential");
-	Homework3->problems_[++num] = new Problem(&exCL_ProgressiveArraySum, "Progressive Array Sum: OpenCL");
-	Homework3->problems_[++num] = new Problem(&exSequential_ProgressiveArraySum, "Progressive Array Sum: Sequential");
-	pgs[Homework3->GroupNum()] = Homework3;
+	Homework4->problems_[++num] = new Problem(&exCL_reduce_v1, "Reduce V1: OpenCL");
+	Homework4->problems_[++num] = new Problem(&exCL_reduce_v2, "Reduce V2: OpenCL");
+	Homework4->problems_[++num] = new Problem(&exCL_reduce_v3, "Reduce V3: OpenCL");
+	Homework4->problems_[++num] = new Problem(&exCL_inclusive_sum_scan_v1, "Inclusive Sum Scan V1: OpenCL");
+	Homework4->problems_[++num] = new Problem(&exCL_inclusive_sum_scan_v2, "Inclusive Sum Scan V2: OpenCL");
+	Homework4->problems_[++num] = new Problem(&exSeq_inclusive_sum_scan, "Inclusive Sum Scan: Sequential");
+	pgs[Homework4->GroupNum()] = Homework4;
 	return pgs;
 }
 
 ///// Local Setting /////
-int HWK3Class::UseHardcodedLocalWorkgroupSizes(ResultsStruct* results)
+int HWK4Class::UseHardcodedLocalWorkgroupSizes(ResultsStruct* results)
 {
 	std::cout << "Enter 1 to use hard coded work group sizes (currently " << USE_HARDCODED_LOCAL_WORKGROUP_SIZES << "): ";
 	unsigned int i = (unsigned int)USE_HARDCODED_LOCAL_WORKGROUP_SIZES;
@@ -58,9 +53,8 @@ int HWK3Class::UseHardcodedLocalWorkgroupSizes(ResultsStruct* results)
 	return 0;
 }
 
-////////////////// MATRIX POWER /////////////////
-// Since MatrixPower and MatrixPower_Manual use identical input types, I use the exact same function call and just vary the KernelName
-int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelName)
+////////////////// REDUCE /////////////////
+int exCL_reduce_Helper(ResultsStruct* results, const std::string& kernelName)
 {
 	cl_int err;
 	ocl_args_d_t ocl(CL_DEVICE_TYPE_GPU);
@@ -68,19 +62,18 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 	// Create Local Variables and Allocate Memory
 	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
 	cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
-	cl_uint arrayHeight = GLOBAL_ARRAY_HEIGHT;
+	cl_uint arrayHeight = 1;
 	cl_uint optimizedSizeFloat = ((sizeof(cl_float) * arrayWidth * arrayHeight - 1) / 64 + 1) * 64;
 	cl_float* inputA = (cl_float*)_aligned_malloc(optimizedSizeFloat, 4096);
-	cl_uint inputB = 2;
 	cl_float* outputC = (cl_float*)_aligned_malloc(optimizedSizeFloat, 4096);
-	if (NULL == inputA || NULL == inputB || NULL == outputC)
+	if (NULL == inputA || NULL == outputC)
 	{
 		LogError("Error: _aligned_malloc failed to allocate buffers.\n");
 		return -1;
 	}
 	// Generate Random Input
-	tools::generateInputCL(inputA, arrayWidth, arrayHeight);
-	inputB = 2; // power of 2
+	tools::generateInputCLSeq(inputA, arrayWidth, arrayHeight);
+	tools::fillZeros(outputC, arrayWidth, arrayHeight);
 
 	// Create OpenCL buffers from host memory for use by Kernel
 	cl_mem           srcA;              // hold first source buffer
@@ -95,7 +88,7 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 		return -1;
 
 	// Create Kernel - kernel name must match kernel name in cl file
-	ocl.kernel = clCreateKernel(ocl.program, KernelName.c_str(), &err);
+	ocl.kernel = clCreateKernel(ocl.program, kernelName.c_str(), &err);
 	if (CL_SUCCESS != err)
 	{
 		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
@@ -105,16 +98,15 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 	// Set OpenCL Kernel Arguments - Order Indicated by Final Argument
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &srcA, 0))
 		return -1;
-	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &inputB, 1))
-		return -1;
-	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 2))
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 1))
 		return -1;
 
 	// Enqueue Kernel (wrapped in profiler timing)
 	ProfilerStruct profiler;
 	profiler.Start();
-	size_t globalWorkSize[2] = { arrayWidth, arrayHeight };
-	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 2, HARDCODED_LOCAL_WORKGROUP_SIZE))
+	size_t globalWorkSize[1] = { arrayWidth };
+	HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1, HARDCODED_LOCAL_WORKGROUP_SIZE))
 		return -1;
 	profiler.Stop();
 	float runTime = profiler.Log();
@@ -133,23 +125,22 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 		// We mapped dstMem to resultPtr, so resultPtr is ready and includes the kernel output !!!
 		// Verify the results
 		bool failed = false;
+		float cumSum = 0.0;
 		for (size_t i = 0; i < arrayWidth; ++i)
 		{
-			for (size_t j = 0; j < arrayHeight; ++j)
+			cumSum += inputA[i];
+			if (i != 0 && resultPtr[i] != 0)
 			{
-				cl_float expectedValue = 1.0;
-				size_t idx = j*arrayWidth + i;
-				for (cl_uint i = 0; i < inputB; i++)
-				{
-					expectedValue *= inputA[idx];
-				}
-				if (abs(resultPtr[idx] - expectedValue) > dmath::MIN_DIFF)
-				{
-					LogError("Verification failed at %d: Expected: %f. Actual: %f.\n", idx, expectedValue, resultPtr[idx]);
-					failed = true;
-				}
+				LogError("Verification failed at %d: Expected: %f. Actual: %f.\n", i, cumSum, resultPtr[i]);
+				failed = true;
 			}
 		}
+		if (resultPtr[0] != cumSum)
+		{
+			LogError("Verification failed at %d: Expected: %f. Actual: %f.\n", 0, cumSum, resultPtr[0]);
+			failed = true;
+		}
+
 		if (!failed)
 			LogInfo("Verification passed.\n");
 
@@ -173,69 +164,26 @@ int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelNam
 	return 0;
 }
 
-int exCL_MatrixPower(ResultsStruct* results)
+int exCL_reduce_v1(ResultsStruct* results)
 {
-	// hard code work group size after finding optimal solution with KDF Sessions
-	// pow: {8,4}
-	size_t localWorkSize[2] = { 8, 4 };
-	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
-		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
-	else
-		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
-	return exCL_MatrixPower_Helper(results, "elementwiseMatrixPower");
+	HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	return exCL_reduce_Helper(results, "reduce_v1");
 }
 
-int exCL_MatrixPower_Manual(ResultsStruct* results)
+int exCL_reduce_v2(ResultsStruct* results)
 {
-	// hard code work group size after finding optimal solution with KDF Sessions
-	// manual: {128,2,0}
-	size_t localWorkSize[2] = { 128, 2 };
-	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
-		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
-	else
-		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
-	return exCL_MatrixPower_Helper(results, "elementwiseMatrixPower_Manual");
+	HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	return exCL_reduce_Helper(results, "reduce_v2");
 }
 
-int exSequential_MatrixPower(ResultsStruct* results)
+int exCL_reduce_v3(ResultsStruct* results)
 {
-	const cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
-	const cl_uint arrayHeight = GLOBAL_ARRAY_HEIGHT;
-
-	// allocate memory
-	cl_float* vectorA = (cl_float*)malloc((sizeof(cl_float) * arrayWidth * arrayHeight));
-	cl_uint K = 2;
-	cl_float* outputC = (cl_float*)malloc((sizeof(cl_float) * arrayWidth * arrayHeight));
-
-	// generate data
-	tools::generateInputCL(vectorA, arrayWidth, arrayHeight);
-
-	// add
-	ProfilerStruct profiler;
-	profiler.Start();
-	bool failed = false;
-	for (size_t i = 0; i < arrayWidth; i++)
-	{
-		for (size_t j = 0; j < arrayHeight; j++)
-		{
-			size_t idx = j*arrayWidth + i;
-			outputC[idx] = (float)pow(vectorA[idx], K);
-		}
-	}
-	profiler.Stop();
-	float runTime = profiler.Log();
-
-	// free memory
-	free(vectorA);
-	free(outputC);
-
-	results->WindowsRunTime = (double)runTime;
-	results->HasWindowsRunTime = true;
-	return 0;
+	HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	return exCL_reduce_Helper(results, "reduce_v3");
 }
 
-////////////////// PROGRESSIVE ARRAY SUM /////////////////
-int exCL_ProgressiveArraySum(ResultsStruct* results)
+///////////////// SCAN //////////////////
+int exCL_inclusive_sum_scan_Helper(ResultsStruct* results, const std::string& kernelName)
 {
 	cl_int err;
 	ocl_args_d_t ocl(CL_DEVICE_TYPE_GPU);
@@ -243,7 +191,7 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 	// Create Local Variables and Allocate Memory
 	// The buffer should be aligned with 4K page and size should fit 64-byte cached line
 	cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
-	cl_uint arrayHeight = GLOBAL_ARRAY_HEIGHT;
+	cl_uint arrayHeight = 1;
 	cl_uint optimizedSizeFloat = ((sizeof(cl_float) * arrayWidth * arrayHeight - 1) / 64 + 1) * 64;
 	cl_float* inputA = (cl_float*)_aligned_malloc(optimizedSizeFloat, 4096);
 	cl_float* outputC = (cl_float*)_aligned_malloc(optimizedSizeFloat, 4096);
@@ -253,14 +201,15 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 		return -1;
 	}
 	// Generate Random Input
-	tools::generateInputCLSeq(inputA, arrayWidth, 1);
+	tools::generateInputCLSeq(inputA, arrayWidth, arrayHeight);
+	tools::fillZeros(outputC, arrayWidth, arrayHeight);
 
 	// Create OpenCL buffers from host memory for use by Kernel
 	cl_mem           srcA;              // hold first source buffer
 	cl_mem           dstMem;            // hold destination buffer
-	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &srcA, inputA, arrayWidth, arrayHeight))
 		return -1;
-	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputC, arrayWidth, 1))
+	if (CL_SUCCESS != CreateReadBufferArg(&ocl.context, &dstMem, outputC, arrayWidth, arrayHeight))
 		return -1;
 
 	// Create and build the OpenCL program - imports named cl file.
@@ -268,7 +217,7 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 		return -1;
 
 	// Create Kernel - kernel name must match kernel name in cl file
-	ocl.kernel = clCreateKernel(ocl.program, "progressiveArraySum", &err);
+	ocl.kernel = clCreateKernel(ocl.program, kernelName.c_str(), &err);
 	if (CL_SUCCESS != err)
 	{
 		LogError("Error: clCreateKernel returned %s\n", TranslateOpenCLError(err));
@@ -280,18 +229,13 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 		return -1;
 	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &dstMem, 1))
 		return -1;
+	if (CL_SUCCESS != SetKernelArgument(&ocl.kernel, &arrayWidth, 2))
+		return -1;
 
 	// Enqueue Kernel (wrapped in profiler timing)
 	ProfilerStruct profiler;
 	profiler.Start();
 	size_t globalWorkSize[1] = { arrayWidth };
-	// hard code work group size after finding optimal solution with KDF Sessions
-	// progressive array sum: {64}
-	size_t localWorkSize[1] = { 64 };
-	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
-		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
-	else
-		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
 	if (CL_SUCCESS != ocl.ExecuteKernel(globalWorkSize, 1, HARDCODED_LOCAL_WORKGROUP_SIZE))
 		return -1;
 	profiler.Stop();
@@ -301,7 +245,7 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 	{
 		// Map Host Buffer to Local Data
 		cl_float* resultPtr = NULL;
-		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, 1, &resultPtr))
+		if (CL_SUCCESS != MapHostBufferToLocal(&ocl.commandQueue, &dstMem, arrayWidth, arrayHeight, &resultPtr))
 		{
 			LogError("Error: clEnqueueMapBuffer failed.\n");
 			return -1;
@@ -321,6 +265,7 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 				failed = true;
 			}
 		}
+
 		if (!failed)
 			LogInfo("Verification passed.\n");
 
@@ -344,27 +289,46 @@ int exCL_ProgressiveArraySum(ResultsStruct* results)
 	return 0;
 }
 
-int exSequential_ProgressiveArraySum(ResultsStruct* results)
+int exCL_inclusive_sum_scan_v1(ResultsStruct* results)
+{
+	// hard code work group size after finding optimal solution with KDF Sessions
+	size_t localWorkSize[1] = { 16 };
+	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
+		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
+	else
+		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	return exCL_inclusive_sum_scan_Helper(results, "inclusive_sum_scan_v1");
+}
+
+int exCL_inclusive_sum_scan_v2(ResultsStruct* results)
+{
+	size_t localWorkSize[1] = { 16 };
+	if (USE_HARDCODED_LOCAL_WORKGROUP_SIZES)
+		HARDCODED_LOCAL_WORKGROUP_SIZE = localWorkSize;
+	else
+		HARDCODED_LOCAL_WORKGROUP_SIZE = NULL;
+	return exCL_inclusive_sum_scan_Helper(results, "inclusive_sum_scan_v2");
+}
+
+int exSeq_inclusive_sum_scan(ResultsStruct* results)
 {
 	const cl_uint arrayWidth = GLOBAL_ARRAY_WIDTH;
+	const cl_uint arrayHeight = GLOBAL_ARRAY_HEIGHT;
 
 	// allocate memory
-	cl_float* vectorA = (cl_float*)malloc((sizeof(cl_float) * arrayWidth));
-	cl_float* outputC = (cl_float*)malloc((sizeof(cl_float) * arrayWidth));
+	cl_float* vectorA = (cl_float*)malloc((sizeof(cl_float) * arrayWidth * arrayHeight));
+	cl_float* outputC = (cl_float*)malloc((sizeof(cl_float) * arrayWidth * arrayHeight));
 
 	// generate data
-	tools::generateInputCL(vectorA, arrayWidth, 1);
+	tools::generateInputCL(vectorA, arrayWidth, arrayHeight);
 
 	// add
 	ProfilerStruct profiler;
 	profiler.Start();
-
-	float cumSum = 0.0;
-	for (size_t i = 0; i < arrayWidth; ++i)
-	{
-		cumSum += vectorA[i];
-		outputC[i] = cumSum;
-	}
+	bool failed = false;
+	outputC[0] = vectorA[0];
+	for (size_t i = 1; i < arrayWidth; i++)
+		outputC[i] = outputC[i - 1] + vectorA[i];
 
 	profiler.Stop();
 	float runTime = profiler.Log();

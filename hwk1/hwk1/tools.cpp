@@ -95,6 +95,13 @@ namespace tools
 		}
 	}
 
+	void fillZeros(cl_float* inputArray, cl_uint arrayWidth, cl_uint arrayHeight)
+	{
+		size_t array_size = arrayWidth * arrayHeight;
+		for (size_t i = 0; i < array_size; ++i)
+			inputArray[i] = 0;
+	}
+
 	void generateInputCMatrix(float arr[1024][1024])
 	{
 		for (size_t i = 0; i < 1024; i++)

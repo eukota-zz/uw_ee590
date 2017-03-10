@@ -15,9 +15,11 @@
 #include "arithmetic.h"
 #include "OCLArgs.h"
 #include "enums.h"
+#include "project.h"
 #include "homework1.h"
 #include "homework2.h"
 #include "homework3.h"
+#include "homework4.h"
 #include "ProblemGroups.h"
 
 //for perf. counters
@@ -31,6 +33,8 @@ void PrintInstructions()
 		<< "// 1 --> Homework 1 //" << endl
 		<< "// 2 --> Homework 2 //" << endl
 		<< "// 3 --> Homework 3 //" << endl
+		<< "// 4 --> Homework 4 //" << endl
+		<< "// P --> Project    //" << endl
 		<< "// Q --> Quit       //" << endl
 		<< endl;
 }
@@ -59,6 +63,16 @@ int _tmain(int argc, TCHAR* argv[])
 		{
 			HWK3Class hwk3c;
 			res = hwk3c.Run();
+		}
+		if (input == "4")
+		{
+			HWK4Class hwk4c;
+			res = hwk4c.Run();
+		}
+		if (input == "P")
+		{
+			ProjectClass projC;
+			res = projC.Run();
 		}
 		if (input == "Q" || input == "q")
 		{

@@ -61,6 +61,9 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\IntelOpenCL.props" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -155,6 +158,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Intel_OpenCL_Build_Rules>
       <Device>1</Device>
+      <SPIRV64>0</SPIRV64>
+      <OTHER>-cl-std=CL2.0</OTHER>
     </Intel_OpenCL_Build_Rules>
     <ClCompile>
       <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -175,6 +180,14 @@
     <PostBuildEvent>
       <Command>If exist "*.cl" copy "*.cl" "$(OutDir)\"</Command>
     </PostBuildEvent>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+    </PreLinkEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -184,11 +197,13 @@
     <ClCompile Include="homework1.cpp" />
     <ClCompile Include="homework2.cpp" />
     <ClCompile Include="homework3.cpp" />
+    <ClCompile Include="homework4.cpp" />
     <ClCompile Include="OCLArgs.cpp" />
     <ClCompile Include="ProblemGroups.cpp" />
     <ClCompile Include="profiler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="arithmetic.cpp" />
+    <ClCompile Include="project.cpp" />
     <ClCompile Include="tools.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
@@ -198,8 +213,10 @@
     <ClInclude Include="homework1.h" />
     <ClInclude Include="homework2.h" />
     <ClInclude Include="homework3.h" />
+    <ClInclude Include="homework4.h" />
     <ClInclude Include="OCLArgs.h" />
     <ClInclude Include="ProblemGroups.h" />
+    <ClInclude Include="project.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="profiler.h" />
     <ClInclude Include="main.h" />
@@ -209,6 +226,7 @@
     <Intel_OpenCL_Build_Rules Include="arithmetic.cl" />
     <Intel_OpenCL_Build_Rules Include="homework2.cl" />
     <Intel_OpenCL_Build_Rules Include="homework3.cl" />
+    <Intel_OpenCL_Build_Rules Include="homework4.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

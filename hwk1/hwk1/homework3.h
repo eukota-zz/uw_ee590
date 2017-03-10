@@ -12,10 +12,10 @@ public:
 
 	std::map<int, ProblemGroup*> GroupFactory();
 
+	///// Local Setting /////
+	static int UseHardcodedLocalWorkgroupSizes(ResultsStruct* results);
 };
 
-///// Local Setting /////
-int UseHardcodedLocalWorkgroupSizes(ResultsStruct* results);
 
 ///// MATRIX POWER //////
 int exCL_MatrixPower_Helper(ResultsStruct* results, const std::string& KernelName);
